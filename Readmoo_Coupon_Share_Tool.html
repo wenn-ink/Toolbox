@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readmoo 折價券排版工具 v2.0.1</title>
+    <style>
+        :root {
+            --text: #23140b;
+            --background: #f6eee9;
+            --primary: #cb8548;
+            --secondary: #abafa7;
+            --accent: #405233;
+            --white: #ffffff;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        [data-theme="dark"] {
+            --text: #f4e5dc;
+            --background: #160e09;
+            --primary: #b77134;
+            --secondary: #545850;
+            --accent: #516f96;
+            --white: #2a1f18;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            font-family: "Microsoft JhengHei", -apple-system, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            transition: var(--transition);
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+
+        .theme-toggle {
+            background: #545850;
+            color: #f4e5dc;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--secondary);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .input-group {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 60px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+            background: var(--background);
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+            background: var(--background);
+            color: var(--text);
+        }
+        
+        .radio-group {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .radio-group label {
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .copy-card {
+            background: var(--white);
+            border-left: 5px solid var(--accent);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .copy-card pre { white-space: pre-wrap; margin: 0; font-size: 0.95rem; }
+
+        .copy-btn {
+            margin-top: 10px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .error-msg { color: var(--primary); font-size: 0.9rem; margin-top: -10px; margin-bottom: 10px; display: block; }
+        .hidden { display: none !important; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body data-theme="light">
+
+<div class="container">
+    <header>
+        <h2 style="margin:0">Readmoo 排版工具 v2.0.1</h2>
+        <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
+    </header>
+
+    <div class="tabs">
+        <button id="tabSingle" class="tab-btn active" onclick="switchMode('single')">單張模式</button>
+        <button id="tabMulti" class="tab-btn" onclick="switchMode('multi')">多張模式</button>
+    </div>
+
+    <div class="input-group">
+        <div id="inputContainer"></div>
+        <label>AP 推薦網址</label>
+        <input type="text" id="apUrl" oninput="saveSettings()" placeholder="請輸入推薦網址（若留白則不顯示 AP 區塊）">
+        
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="apMode" value="simple" onchange="saveSettings()" checked> 簡單版
+            </label>
+            <label>
+                <input type="radio" name="apMode" value="full" onchange="saveSettings()"> AP操作版
+            </label>
+        </div>
+    </div>
+
+    <button class="btn-main" onclick="generate()">產生排版資料</button>
+
+    <div id="outputArea" class="hidden">
+        <h3 style="margin-top:30px; border-left: 4px solid var(--primary); padding-left: 10px;">排版結果</h3>
+        
+        <label>1. 主旨欄</label>
+        <div class="copy-card">
+            <pre id="outIntro"></pre>
+            <button class="copy-btn" onclick="copy('outIntro')">複製本段文字</button>
+        </div>
+
+        <label>2. 折價券欄</label>
+        <div class="copy-card">
+            <pre id="outDetails"></pre>
+            <button class="copy-btn" onclick="copy('outDetails')">複製本段文字</button>
+        </div>
+
+        <div id="wrapAp">
+            <label id="apLabel">3. AP 推薦連結</label>
+            <div class="copy-card">
+                <pre id="outAp"></pre>
+                <button class="copy-btn" onclick="copy('outAp')">複製本段文字</button>
+            </div>
+        </div>
+
+        <button class="btn-main" style="margin-top: 20px; background: var(--accent);" onclick="copyAll()">複製全文</button>
+    </div>
+</div>
+
+<script>
+    let mode = 'single';
+    const chineseNums = ['一', '二', '三', '四', '五'];
+
+    window.onload = () => {
+        const theme = localStorage.getItem('rm_theme') || 'light';
+        document.body.setAttribute('data-theme', theme);
+        
+        // 讀取紀錄的 AP 與設定
+        const ap = localStorage.getItem('rm_ap');
+        document.getElementById('apUrl').value = (ap !== null) ? ap : 'https://moo.im/a/3hjDET';
+        
+        const savedApMode = localStorage.getItem('rm_ap_mode') || 'simple';
+        const radioTarget = document.querySelector(`input[name="apMode"][value="${savedApMode}"]`);
+        if(radioTarget) radioTarget.checked = true;
+
+        switchMode('single');
+    };
+
+    function toggleTheme() {
+        const current = document.body.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', next);
+        localStorage.setItem('rm_theme', next);
+    }
+
+    function switchMode(m) {
+        mode = m;
+        document.getElementById('tabSingle').classList.toggle('active', m === 'single');
+        document.getElementById('tabMulti').classList.toggle('active', m === 'multi');
+        document.getElementById('outputArea').classList.add('hidden');
+        
+        const container = document.getElementById('inputContainer');
+        container.innerHTML = '';
+        const count = m === 'single' ? 1 : 5;
+        for (let i = 0; i < count; i++) {
+            container.innerHTML += `
+                <label>${m==='single' ? '折價券資料 (限填一筆序號)' : '折價券 '+chineseNums[i]}</label>
+                <textarea id="inp${i}" placeholder="貼上一筆折價券資料"></textarea>
+                <span id="err${i}" class="error-msg"></span>
+            `;
+        }
+    }
+
+    // 儲存網址與 AP 模式的選擇
+    function saveSettings() {
+        localStorage.setItem('rm_ap', document.getElementById('apUrl').value);
+        const selectedMode = document.querySelector('input[name="apMode"]:checked').value;
+        localStorage.setItem('rm_ap_mode', selectedMode);
+    }
+
+    function parse(text) {
+        if (!text.trim()) return null;
+        const idMatch = text.match(/[A-Z0-9]+-[A-Z0-9]+/);
+        if (!idMatch) return "無法辨識序號";
+        
+        const dates = text.match(/\d{4}\/\d{2}\/\d{2}/g);
+        if (!dates) return "無法辨識日期";
+        const finalDate = dates.sort().reverse()[0];
+
+        let desc = "優惠券";
+        const patterns = [/\d+本\d+折/g, /滿\d+元折\d+元/g, /不限金額折\d+元/g, /\d+折/g];
+        for (let p of patterns) {
+            const m = text.match(p);
+            if (m) { desc = m[0]; break; }
+        }
+        if (desc === "優惠券" && text.includes('～')) {
+            desc = text.split('～')[1].split(' ')[0].replace('優惠券', '');
+        }
+
+        return { id: idMatch[0], desc, date: finalDate };
+    }
+
+    function generate() {
+        const items = [];
+        const count = mode === 'single' ? 1 : 5;
+        let empty = true;
+
+        for (let i = 0; i < count; i++) {
+            const val = document.getElementById(`inp${i}`).value;
+            const err = document.getElementById(`err${i}`);
+            err.innerText = '';
+            if (val.trim()) {
+                empty = false;
+                const p = parse(val);
+                if (typeof p === 'string') { err.innerText = p; }
+                else if (p) { items.push(p); }
+            }
+        }
+
+        if (empty) { alert("還沒輸入折價券喔"); return; }
+        if (items.length === 0) return;
+
+        items.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        let intro = "", detail = "";
+
+        if (mode === 'single') {
+            const closingSingle = "\n序號下收，希望使用後能回報。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
+            const d = items[0];
+            intro = `分享 Readmoo 讀墨電子書${d.desc}折價券，${d.date}到期。${closingSingle}`;
+            detail = `${d.id}\n${d.desc}，${d.date}到期。`;
+        } else {
+            const closingMulti = "\n序號下收，希望使用後能回報識別號碼。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
+            const firstD = items[0].date;
+            const lastD = items[items.length - 1].date;
+            const range = firstD === lastD ? `${firstD}到期` : `${firstD}～${lastD}到期`;
+            
+            const uniqueDescs = [...new Set(items.map(x => x.desc))].join('、');
+            intro = `分享多張 Readmoo 讀墨電子書折價券：\n${range}，\n有${uniqueDescs}；${closingMulti}`;
+            detail = items.map((x, i) => `${chineseNums[i]}、${x.desc}，${x.date}到期：\n${x.id}`).join('\n\n');
+        }
+
+        document.getElementById('outIntro').innerText = intro;
+        document.getElementById('outDetails').innerText = detail;
+
+        // V2.0.1 修正：AP 產生邏輯
+        const ap = document.getElementById('apUrl').value.trim();
+        const apMode = document.querySelector('input[name="apMode"]:checked').value;
+
+        if (ap !== "") {
+            document.getElementById('wrapAp').classList.remove('hidden');
+            if (apMode === 'simple') {
+                document.getElementById('apLabel').innerText = "3. AP 簡單版";
+                document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n${ap}`;
+            } else {
+                document.getElementById('apLabel').innerText = "3. AP 含操作版";
+                document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n\n1.檢查購物車內是否已有商品，若有，麻煩先刪除。  \n2.點選 AP 連結：${ap}\n3.重新「搜尋商品並加入購物車」。  \n4.使用折價券。\n5.確認折抵後，結帳。`;
+            }
+        } else {
+            document.getElementById('wrapAp').classList.add('hidden');
+            document.getElementById('outAp').innerText = "";
+        }
+
+        document.getElementById('outputArea').classList.remove('hidden');
+    }
+
+    function copy(id) {
+        navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => alert("已複製！"));
+    }
+
+    // V2.0.1 修正：動態取得當前出現的區塊文字並複製
+    function copyAll() {
+        const intro = document.getElementById('outIntro').innerText;
+        const details = document.getElementById('outDetails').innerText;
+        const apText = document.getElementById('outAp').innerText.trim();
+        
+        let textArr = [intro, details];
+        if (apText !== "") {
+            textArr.push(apText);
+        }
+        
+        navigator.clipboard.writeText(textArr.join('\n\n')).then(() => alert("已複製全文！"));
+    }
+</script>
+</body>
+</html>
