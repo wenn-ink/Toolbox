@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>那個手機打字好痛苦的輔助編輯器</title>
+<title>iPhone 友善文字編輯器</title>
 <style>
   :root {
     --base-font-size: 16px;
@@ -13,6 +13,7 @@
     --btn-bg: #EAE3CB;
     --btn-active: #D4CDB3;
     --primary-btn: #D3A27D; 
+    --danger-btn: #E68A8A; /* 刪除按鈕用的淡紅色 */
   }
 
   html {
@@ -167,6 +168,21 @@
     flex-grow: 1;
   }
   
+  .btn-group {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .btn-delete {
+    background-color: var(--danger-btn);
+    color: #fff;
+    border: none;
+  }
+
+  .btn-delete:active {
+    background-color: #D67A7A;
+  }
+
   .draft-preview {
     font-size: 0.85rem;
     color: #666666;
@@ -207,7 +223,7 @@
   </div>
 
   <div class="symbol-bar">
-    <button onclick="insertDate()">今天</button>
+    <button onclick="insertDate()">時鐘</button>
     <button onclick="toggleNumpad()">9</button>
     <button onclick="insertText('「')">「</button>
     <button onclick="insertText('」')">」</button>
@@ -252,9 +268,10 @@
     <div class="draft-item">
       <div class="draft-row">
         <span>草稿位 1</span>
-        <div>
+        <div class="btn-group">
           <button onclick="saveDraft(1)">存入</button>
           <button onclick="loadDraft(1)">讀取</button>
+          <button class="btn-delete" onclick="clearDraft(1)">刪除</button>
         </div>
       </div>
       <div class="draft-preview" id="preview-1">尚無存檔紀錄</div>
@@ -263,9 +280,10 @@
     <div class="draft-item">
       <div class="draft-row">
         <span>草稿位 2</span>
-        <div>
+        <div class="btn-group">
           <button onclick="saveDraft(2)">存入</button>
           <button onclick="loadDraft(2)">讀取</button>
+          <button class="btn-delete" onclick="clearDraft(2)">刪除</button>
         </div>
       </div>
       <div class="draft-preview" id="preview-2">尚無存檔紀錄</div>
@@ -274,9 +292,10 @@
     <div class="draft-item">
       <div class="draft-row">
         <span>草稿位 3</span>
-        <div>
+        <div class="btn-group">
           <button onclick="saveDraft(3)">存入</button>
           <button onclick="loadDraft(3)">讀取</button>
+          <button class="btn-delete" onclick="clearDraft(3)">刪除</button>
         </div>
       </div>
       <div class="draft-preview" id="preview-3">尚無存檔紀錄</div>
@@ -378,13 +397,8 @@
 
     function toggleNumpad() {
       const numpad = document.getElementById('numpad');
-      if (numpad.style.display === 'none') {
-        numpad.style.display = 'block';
-        editor.focus(); 
-      } else {
-        numpad.style.display = 'none';
-        editor.focus();
-      }
+      numpad.style.display = (numpad.style.display === 'none') ? 'block' : 'none';
+      editor.focus();
     }
 
     function moveCursor(direction) {
@@ -426,12 +440,7 @@
     function saveDraft(slot) {
       const content = editor.value;
       const timestamp = getFormattedDate();
-      
-      const draftData = {
-        time: timestamp,
-        text: content
-      };
-      
+      const draftData = { time: timestamp, text: content };
       localStorage.setItem('editor_draft_' + slot, JSON.stringify(draftData));
       updatePreview(slot); 
       alert('已存入草稿位 ' + slot);
@@ -443,12 +452,10 @@
         alert('草稿位 ' + slot + ' 目前為空。');
         return;
       }
-      
       if (editor.value.trim() !== '') {
         const confirmLoad = confirm('編輯區內已有文字，讀取草稿將會覆蓋當前內容。是否繼續？');
         if (!confirmLoad) return;
       }
-      
       try {
         const draftData = JSON.parse(rawData);
         editor.value = draftData.text; 
@@ -457,10 +464,22 @@
       }
     }
 
+    // 新增：清除指定位置的草稿
+    function clearDraft(slot) {
+      const rawData = localStorage.getItem('editor_draft_' + slot);
+      if (!rawData) return;
+
+      const confirmDelete = confirm('確定要永久刪除草稿位 ' + slot + ' 的內容嗎？');
+      if (confirmDelete) {
+        localStorage.removeItem('editor_draft_' + slot);
+        updatePreview(slot);
+        alert('草稿位 ' + slot + ' 已刪除。');
+      }
+    }
+
     function copyAll() {
       editor.select();
       editor.setSelectionRange(0, 99999); 
-      
       navigator.clipboard.writeText(editor.value).then(() => {
         alert('全文已複製！');
         const length = editor.value.length;
