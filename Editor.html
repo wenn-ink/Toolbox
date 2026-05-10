@@ -2,18 +2,17 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<!-- 防止在 iPhone 上點擊輸入框時自動放大畫面 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>iPhone 友善文字編輯器</title>
 <style>
   :root {
     --base-font-size: 16px;
-    --bg-color: #FDF6E3; /* 暖米色背景，避開極端白 */
-    --text-color: #333333; /* 深灰文字，避開極端黑 */
+    --bg-color: #FDF6E3; 
+    --text-color: #333333; 
     --border-color: #D4CDB3;
     --btn-bg: #EAE3CB;
     --btn-active: #D4CDB3;
-    --primary-btn: #D3A27D; /* 暖橘色作為主要操作按鈕 */
+    --primary-btn: #D3A27D; 
   }
 
   html {
@@ -53,7 +52,7 @@
     background-color: var(--btn-bg);
     color: var(--text-color);
     cursor: pointer;
-    touch-action: manipulation; /* 優化觸控延遲 */
+    touch-action: manipulation;
   }
 
   button:active {
@@ -75,7 +74,7 @@
     padding: 0.8rem;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
-    background-color: #FFFDF8; /* 微暖白底色 */
+    background-color: #FFFDF8;
     color: var(--text-color);
     resize: none;
     line-height: 1.6;
@@ -108,10 +107,21 @@
   .draft-section {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.6rem;
     margin-bottom: 0.5rem;
     border-top: 1px solid var(--border-color);
     padding-top: 0.5rem;
+  }
+
+  .draft-item {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 0.5rem;
+  }
+  
+  .draft-item:last-child {
+    border-bottom: none;
   }
 
   .draft-row {
@@ -122,8 +132,20 @@
   }
 
   .draft-row span {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: bold;
     flex-grow: 1;
+  }
+  
+  /* 預覽文字的樣式設計 */
+  .draft-preview {
+    font-size: 0.85rem;
+    color: #666666;
+    margin-top: 0.3rem;
+    /* 下方三行確保文字絕對不換行，超出螢幕自動變「...」 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .action-bar {
@@ -179,20 +201,37 @@
   </div>
 
   <div class="draft-section">
-    <div class="draft-row">
-      <span>草稿位 1</span>
-      <button onclick="saveDraft(1)">存入</button>
-      <button onclick="loadDraft(1)">讀取</button>
+    <div class="draft-item">
+      <div class="draft-row">
+        <span>草稿位 1</span>
+        <div>
+          <button onclick="saveDraft(1)">存入</button>
+          <button onclick="loadDraft(1)">讀取</button>
+        </div>
+      </div>
+      <div class="draft-preview" id="preview-1">尚無存檔紀錄</div>
     </div>
-    <div class="draft-row">
-      <span>草稿位 2</span>
-      <button onclick="saveDraft(2)">存入</button>
-      <button onclick="loadDraft(2)">讀取</button>
+    
+    <div class="draft-item">
+      <div class="draft-row">
+        <span>草稿位 2</span>
+        <div>
+          <button onclick="saveDraft(2)">存入</button>
+          <button onclick="loadDraft(2)">讀取</button>
+        </div>
+      </div>
+      <div class="draft-preview" id="preview-2">尚無存檔紀錄</div>
     </div>
-    <div class="draft-row">
-      <span>草稿位 3</span>
-      <button onclick="saveDraft(3)">存入</button>
-      <button onclick="loadDraft(3)">讀取</button>
+
+    <div class="draft-item">
+      <div class="draft-row">
+        <span>草稿位 3</span>
+        <div>
+          <button onclick="saveDraft(3)">存入</button>
+          <button onclick="loadDraft(3)">讀取</button>
+        </div>
+      </div>
+      <div class="draft-preview" id="preview-3">尚無存檔紀錄</div>
     </div>
   </div>
 
@@ -203,8 +242,58 @@
   <script>
     const editor = document.getElementById('editor');
     let currentFontSize = 16;
+    
+    // 自訂設定：預覽文字擷取的字元數量
+    const PREVIEW_CHAR_LIMIT = 10; 
 
-    // 字體放大縮小
+    // 頁面載入時，自動更新三個草稿位的預覽
+    window.onload = function() {
+        updatePreview(1);
+        updatePreview(2);
+        updatePreview(3);
+    };
+
+    // 取得西元日期與 24 小時制時間
+    function getFormattedDate() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `[${year}/${month}/${day} ${hours}:${minutes}]`;
+    }
+
+    // 更新介面上的預覽文字
+    function updatePreview(slot) {
+      const rawData = localStorage.getItem('editor_draft_' + slot);
+      const previewElement = document.getElementById('preview-' + slot);
+
+      if (!rawData) {
+        previewElement.textContent = '尚無存檔紀錄';
+        return;
+      }
+
+      let draftData;
+      try {
+        // 嘗試解析新的 JSON 格式
+        draftData = JSON.parse(rawData);
+      } catch (e) {
+        // 相容處理：如果是之前舊版直接存純文字的資料
+        draftData = { time: '[無時間紀錄]', text: rawData };
+      }
+
+      // 將文字內的換行符號替換為空格，避免排版破裂
+      let cleanText = draftData.text.replace(/\n/g, ' ').trim();
+      let previewText = cleanText.substring(0, PREVIEW_CHAR_LIMIT);
+      
+      if (cleanText.length > PREVIEW_CHAR_LIMIT) {
+        previewText += '...';
+      }
+
+      previewElement.textContent = `${draftData.time} ${previewText}`;
+    }
+
     function changeFontSize(change) {
       currentFontSize += change;
       if (currentFontSize < 12) currentFontSize = 12;
@@ -212,7 +301,6 @@
       document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
     }
 
-    // 插入符號
     function insertText(text) {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
@@ -220,11 +308,9 @@
       
       editor.value = currentText.substring(0, start) + text + currentText.substring(end);
       editor.focus();
-      // 將游標移動到插入的符號之後
       editor.setSelectionRange(start + text.length, start + text.length);
     }
 
-    // 控制游標移動
     function moveCursor(direction) {
       editor.focus();
       let start = editor.selectionStart;
@@ -261,17 +347,24 @@
       }
     }
 
-    // 儲存草稿
     function saveDraft(slot) {
       const content = editor.value;
-      localStorage.setItem('editor_draft_' + slot, content);
+      const timestamp = getFormattedDate();
+      
+      // 改為儲存 JSON 物件，包含時間與文字
+      const draftData = {
+        time: timestamp,
+        text: content
+      };
+      
+      localStorage.setItem('editor_draft_' + slot, JSON.stringify(draftData));
+      updatePreview(slot); // 存檔後立即刷新預覽
       alert('已存入草稿位 ' + slot);
     }
 
-    // 讀取草稿
     function loadDraft(slot) {
-      const content = localStorage.getItem('editor_draft_' + slot);
-      if (content === null) {
+      const rawData = localStorage.getItem('editor_draft_' + slot);
+      if (!rawData) {
         alert('草稿位 ' + slot + ' 目前為空。');
         return;
       }
@@ -281,17 +374,21 @@
         if (!confirmLoad) return;
       }
       
-      editor.value = content;
+      try {
+        const draftData = JSON.parse(rawData);
+        editor.value = draftData.text; // 讀取 JSON 內的 text 屬性
+      } catch (e) {
+        // 相容處理：如果是之前舊版直接存純文字的資料
+        editor.value = rawData;
+      }
     }
 
-    // 複製全文
     function copyAll() {
       editor.select();
-      editor.setSelectionRange(0, 99999); // 支援行動裝置
+      editor.setSelectionRange(0, 99999); 
       
       navigator.clipboard.writeText(editor.value).then(() => {
         alert('全文已複製！');
-        // 取消全選狀態，恢復游標至末端
         const length = editor.value.length;
         editor.setSelectionRange(length, length);
       }).catch(err => {
