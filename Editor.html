@@ -84,13 +84,6 @@
     outline: 2px solid var(--primary-btn);
   }
 
-  .toolbar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
   .symbol-bar {
     display: flex;
     gap: 0.5rem;
@@ -102,6 +95,43 @@
   .symbol-bar button {
     flex: 0 0 auto;
     min-width: 3rem;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .numpad-wrapper {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background-color: #F4EED8;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+  }
+
+  .numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .numpad-grid button {
+    padding: 1rem 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background-color: #FFFDF8;
+  }
+
+  .numpad-grid button:active {
+    background-color: var(--btn-active);
+  }
+
+  .numpad-grid .numpad-action {
+    font-size: 1rem;
+    background-color: var(--btn-bg);
   }
 
   .draft-section {
@@ -137,12 +167,10 @@
     flex-grow: 1;
   }
   
-  /* 預覽文字的樣式設計 */
   .draft-preview {
     font-size: 0.85rem;
     color: #666666;
     margin-top: 0.3rem;
-    /* 下方三行確保文字絕對不換行，超出螢幕自動變「...」 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -179,6 +207,8 @@
   </div>
 
   <div class="symbol-bar">
+    <button onclick="insertDate()">時鐘</button>
+    <button onclick="toggleNumpad()">9</button>
     <button onclick="insertText('「')">「</button>
     <button onclick="insertText('」')">」</button>
     <button onclick="insertText('〈')">〈</button>
@@ -198,6 +228,24 @@
     <button onclick="moveCursor('down')">下</button>
     <button onclick="moveCursor('left')">左</button>
     <button onclick="moveCursor('right')">右</button>
+    <button onclick="deleteChar()">刪除</button>
+  </div>
+
+  <div id="numpad" class="numpad-wrapper" style="display: none;">
+    <div class="numpad-grid">
+      <button onclick="insertText('1')">1</button>
+      <button onclick="insertText('2')">2</button>
+      <button onclick="insertText('3')">3</button>
+      <button onclick="insertText('4')">4</button>
+      <button onclick="insertText('5')">5</button>
+      <button onclick="insertText('6')">6</button>
+      <button onclick="insertText('7')">7</button>
+      <button onclick="insertText('8')">8</button>
+      <button onclick="insertText('9')">9</button>
+      <button class="numpad-action" onclick="toggleNumpad()">收起</button>
+      <button onclick="insertText('0')">0</button>
+      <button class="numpad-action" onclick="deleteChar()">刪除</button>
+    </div>
   </div>
 
   <div class="draft-section">
@@ -242,18 +290,14 @@
   <script>
     const editor = document.getElementById('editor');
     let currentFontSize = 16;
-    
-    // 自訂設定：預覽文字擷取的字元數量
     const PREVIEW_CHAR_LIMIT = 10; 
 
-    // 頁面載入時，自動更新三個草稿位的預覽
     window.onload = function() {
         updatePreview(1);
         updatePreview(2);
         updatePreview(3);
     };
 
-    // 取得西元日期與 24 小時制時間
     function getFormattedDate() {
       const d = new Date();
       const year = d.getFullYear();
@@ -264,7 +308,14 @@
       return `[${year}/${month}/${day} ${hours}:${minutes}]`;
     }
 
-    // 更新介面上的預覽文字
+    function insertDate() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      insertText(`${year}/${month}/${day}`);
+    }
+
     function updatePreview(slot) {
       const rawData = localStorage.getItem('editor_draft_' + slot);
       const previewElement = document.getElementById('preview-' + slot);
@@ -276,14 +327,11 @@
 
       let draftData;
       try {
-        // 嘗試解析新的 JSON 格式
         draftData = JSON.parse(rawData);
       } catch (e) {
-        // 相容處理：如果是之前舊版直接存純文字的資料
         draftData = { time: '[無時間紀錄]', text: rawData };
       }
 
-      // 將文字內的換行符號替換為空格，避免排版破裂
       let cleanText = draftData.text.replace(/\n/g, ' ').trim();
       let previewText = cleanText.substring(0, PREVIEW_CHAR_LIMIT);
       
@@ -309,6 +357,34 @@
       editor.value = currentText.substring(0, start) + text + currentText.substring(end);
       editor.focus();
       editor.setSelectionRange(start + text.length, start + text.length);
+    }
+
+    function deleteChar() {
+      editor.focus();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const currentText = editor.value;
+
+      if (start === end) {
+        if (start > 0) {
+          editor.value = currentText.substring(0, start - 1) + currentText.substring(end);
+          editor.setSelectionRange(start - 1, start - 1);
+        }
+      } else {
+        editor.value = currentText.substring(0, start) + currentText.substring(end);
+        editor.setSelectionRange(start, start);
+      }
+    }
+
+    function toggleNumpad() {
+      const numpad = document.getElementById('numpad');
+      if (numpad.style.display === 'none') {
+        numpad.style.display = 'block';
+        editor.focus(); 
+      } else {
+        numpad.style.display = 'none';
+        editor.focus();
+      }
     }
 
     function moveCursor(direction) {
@@ -351,14 +427,13 @@
       const content = editor.value;
       const timestamp = getFormattedDate();
       
-      // 改為儲存 JSON 物件，包含時間與文字
       const draftData = {
         time: timestamp,
         text: content
       };
       
       localStorage.setItem('editor_draft_' + slot, JSON.stringify(draftData));
-      updatePreview(slot); // 存檔後立即刷新預覽
+      updatePreview(slot); 
       alert('已存入草稿位 ' + slot);
     }
 
@@ -376,9 +451,8 @@
       
       try {
         const draftData = JSON.parse(rawData);
-        editor.value = draftData.text; // 讀取 JSON 內的 text 屬性
+        editor.value = draftData.text; 
       } catch (e) {
-        // 相容處理：如果是之前舊版直接存純文字的資料
         editor.value = rawData;
       }
     }
