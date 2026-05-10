@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<!-- 防止在 iPhone 上點擊輸入框時自動放大畫面 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>iPhone 友善文字編輯器</title>
+<style>
+  :root {
+    --base-font-size: 16px;
+    --bg-color: #FDF6E3; /* 暖米色背景，避開極端白 */
+    --text-color: #333333; /* 深灰文字，避開極端黑 */
+    --border-color: #D4CDB3;
+    --btn-bg: #EAE3CB;
+    --btn-active: #D4CDB3;
+    --primary-btn: #D3A27D; /* 暖橘色作為主要操作按鈕 */
+  }
+
+  html {
+    font-size: var(--base-font-size);
+    transition: font-size 0.3s ease;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: sans-serif;
+    margin: 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.3rem;
+    background-color: var(--btn-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    touch-action: manipulation; /* 優化觸控延遲 */
+  }
+
+  button:active {
+    background-color: var(--btn-active);
+  }
+
+  .editor-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.5rem;
+  }
+
+  textarea {
+    flex-grow: 1;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1.2rem;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: #FFFDF8; /* 微暖白底色 */
+    color: var(--text-color);
+    resize: none;
+    line-height: 1.6;
+  }
+
+  textarea:focus {
+    outline: 2px solid var(--primary-btn);
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .symbol-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.3rem;
+  }
+
+  .symbol-bar button {
+    flex: 0 0 auto;
+    min-width: 3rem;
+  }
+
+  .draft-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+  }
+
+  .draft-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .draft-row span {
+    font-size: 0.9rem;
+    flex-grow: 1;
+  }
+
+  .action-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
+  .action-bar button {
+    flex: 1;
+    background-color: var(--primary-btn);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    padding: 0.8rem;
+  }
+
+  .action-bar button:active {
+    background-color: #B88561;
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>簡易編輯器</h1>
+    <div>
+      <button onclick="changeFontSize(-2)">A-</button>
+      <button onclick="changeFontSize(2)">A+</button>
+    </div>
+  </div>
+
+  <div class="symbol-bar">
+    <button onclick="insertText('「')">「</button>
+    <button onclick="insertText('」')">」</button>
+    <button onclick="insertText('〈')">〈</button>
+    <button onclick="insertText('〉')">〉</button>
+    <button onclick="insertText('《')">《</button>
+    <button onclick="insertText('》')">》</button>
+    <button onclick="insertText('、')">、</button>
+    <button onclick="insertText('。')">。</button>
+  </div>
+
+  <div class="editor-container">
+    <textarea id="editor" placeholder="在此輸入內容..."></textarea>
+  </div>
+
+  <div class="toolbar">
+    <button onclick="moveCursor('up')">上</button>
+    <button onclick="moveCursor('down')">下</button>
+    <button onclick="moveCursor('left')">左</button>
+    <button onclick="moveCursor('right')">右</button>
+  </div>
+
+  <div class="draft-section">
+    <div class="draft-row">
+      <span>草稿位 1</span>
+      <button onclick="saveDraft(1)">存入</button>
+      <button onclick="loadDraft(1)">讀取</button>
+    </div>
+    <div class="draft-row">
+      <span>草稿位 2</span>
+      <button onclick="saveDraft(2)">存入</button>
+      <button onclick="loadDraft(2)">讀取</button>
+    </div>
+    <div class="draft-row">
+      <span>草稿位 3</span>
+      <button onclick="saveDraft(3)">存入</button>
+      <button onclick="loadDraft(3)">讀取</button>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button onclick="copyAll()">一鍵複製全文</button>
+  </div>
+
+  <script>
+    const editor = document.getElementById('editor');
+    let currentFontSize = 16;
+
+    // 字體放大縮小
+    function changeFontSize(change) {
+      currentFontSize += change;
+      if (currentFontSize < 12) currentFontSize = 12;
+      if (currentFontSize > 32) currentFontSize = 32;
+      document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+    }
+
+    // 插入符號
+    function insertText(text) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const currentText = editor.value;
+      
+      editor.value = currentText.substring(0, start) + text + currentText.substring(end);
+      editor.focus();
+      // 將游標移動到插入的符號之後
+      editor.setSelectionRange(start + text.length, start + text.length);
+    }
+
+    // 控制游標移動
+    function moveCursor(direction) {
+      editor.focus();
+      let start = editor.selectionStart;
+      let text = editor.value;
+
+      if (direction === 'left' && start > 0) {
+        editor.setSelectionRange(start - 1, start - 1);
+      } else if (direction === 'right' && start < text.length) {
+        editor.setSelectionRange(start + 1, start + 1);
+      } else if (direction === 'up') {
+        let prevLineEnd = text.lastIndexOf('\n', start - 1);
+        let prevLineStart = text.lastIndexOf('\n', prevLineEnd - 1);
+        if (prevLineEnd !== -1) {
+            let currentLineOffset = start - prevLineEnd - 1;
+            let newPos = prevLineStart + 1 + currentLineOffset;
+            if (newPos > prevLineEnd) newPos = prevLineEnd;
+            editor.setSelectionRange(newPos, newPos);
+        } else {
+            editor.setSelectionRange(0, 0);
+        }
+      } else if (direction === 'down') {
+         let nextLineStart = text.indexOf('\n', start);
+         if (nextLineStart !== -1) {
+             let currentLineStart = text.lastIndexOf('\n', start - 1);
+             let currentLineOffset = start - currentLineStart - 1;
+             let nextLineEnd = text.indexOf('\n', nextLineStart + 1);
+             if (nextLineEnd === -1) nextLineEnd = text.length;
+             let newPos = nextLineStart + 1 + currentLineOffset;
+             if (newPos > nextLineEnd) newPos = nextLineEnd;
+             editor.setSelectionRange(newPos, newPos);
+         } else {
+             editor.setSelectionRange(text.length, text.length);
+         }
+      }
+    }
+
+    // 儲存草稿
+    function saveDraft(slot) {
+      const content = editor.value;
+      localStorage.setItem('editor_draft_' + slot, content);
+      alert('已存入草稿位 ' + slot);
+    }
+
+    // 讀取草稿
+    function loadDraft(slot) {
+      const content = localStorage.getItem('editor_draft_' + slot);
+      if (content === null) {
+        alert('草稿位 ' + slot + ' 目前為空。');
+        return;
+      }
+      
+      if (editor.value.trim() !== '') {
+        const confirmLoad = confirm('編輯區內已有文字，讀取草稿將會覆蓋當前內容。是否繼續？');
+        if (!confirmLoad) return;
+      }
+      
+      editor.value = content;
+    }
+
+    // 複製全文
+    function copyAll() {
+      editor.select();
+      editor.setSelectionRange(0, 99999); // 支援行動裝置
+      
+      navigator.clipboard.writeText(editor.value).then(() => {
+        alert('全文已複製！');
+        // 取消全選狀態，恢復游標至末端
+        const length = editor.value.length;
+        editor.setSelectionRange(length, length);
+      }).catch(err => {
+        alert('複製失敗，請手動全選複製。');
+      });
+    }
+  </script>
+</body>
+</html>

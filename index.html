@@ -6,7 +6,7 @@
     <title>懶散的工具箱</title>
     <style>
         :root {
-            --bg-color: #fffaf0; /* 暖調米色，對視覺更友善 */
+            --bg-color: #fffaf0; /* 暖調米色 */
             --text-color: #4a4a4a;
             --accent-color: #e9edc9;
             --link-color: #606c38;
@@ -66,6 +66,7 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             border: 1px solid rgba(0,0,0,0.02);
             display: block;
+            text-align: left; /* 改為靠左對齊較易閱讀 */
         }
 
         .tool-card:hover {
@@ -111,19 +112,23 @@
         </header>
 
         <main class="tool-grid">
+            <a href="Editor.html" class="tool-card">
+                <span class="tool-name">✍️ iPhone 友善編輯器</span>
+                <span class="tool-desc">精準游標控制、快捷符號與本地草稿暫存</span>
+            </a>
+
             <a href="Readmoo_Coupon_Share_Tool.html" class="tool-card">
                 <span class="tool-name">📦 Readmoo 序號分享工具</span>
                 <span class="tool-desc">點擊直接開啟小工具頁面</span>
             </a>
 
-            <!-- 預留位置，增加一點探索感 -->
             <div class="placeholder-card">
                 還有什麼想做的嗎？先睡個午覺再說...
             </div>
         </main>
 
         <footer>
-            [2026-04-26 版]
+            [2026-05-10 版]
         </footer>
     </div>
 
