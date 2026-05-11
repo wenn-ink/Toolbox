@@ -5,246 +5,160 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>那個手機打字好痛苦的輔助編輯器</title>
 <style>
+  /* [CSS / 樣式區域] */
   :root {
     --base-font-size: 16px;
-    --bg-color: #FDF6E3; 
+    --bg-color: #FDF6E3;      /* 護眼暖米色 */
     --text-color: #333333; 
     --border-color: #D4CDB3;
-    --btn-bg: #EAE3CB;
-    --btn-active: #D4CDB3;
-    --primary-btn: #D3A27D; 
-    --danger-btn: #E68A8A; /* 刪除按鈕用的淡紅色 */
+    
+    /* 不同的顏色：按鈕視覺區隔 */
+    --btn-move: #E6F3FF;      /* 移動鍵：淡藍色 */
+    --btn-history: #E8F5E9;   /* 復原重做：淡綠色 */
+    --btn-edit: #FFF3E0;      /* 刪除：淡橘色 */
+    --btn-symbol: #EAE3CB;    /* 符號/日期：米灰色 */
+    --btn-primary: #D3A27D;   /* 主要動作：土黃色 */
+    --btn-danger: #FFEBEE;    /* 刪除草稿：淡紅色 */
+    
+    /* 底部動作按鈕專屬色 */
+    --btn-action-clear: #D4A3A3; /* 清除：柔和磚紅 */
+    --btn-action-copy: #D3A27D;  /* 複製：暖橘色 */
   }
 
-  html {
-    font-size: var(--base-font-size);
-    transition: font-size 0.3s ease;
+  html { font-size: var(--base-font-size); transition: font-size 0.3s ease; }
+  body { 
+    background-color: var(--bg-color); 
+    color: var(--text-color); 
+    font-family: sans-serif; 
+    margin: 0; 
+    padding: 1rem; 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    box-sizing: border-box; 
   }
 
-  body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: sans-serif;
-    margin: 0;
+  /* 功能區域說明：頂部 */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; position: relative; }
+  h1 { font-size: 1.1rem; margin: 0; }
+  .header-actions { display: flex; gap: 0.3rem; align-items: center; }
+
+  button { 
+    font-size: 1rem; 
+    padding: 0.6rem; 
+    border: 1px solid var(--border-color); 
+    border-radius: 0.3rem; 
+    cursor: pointer; 
+    touch-action: manipulation; 
+  }
+  button:active { filter: brightness(0.9); }
+  button:disabled { opacity: 0.3; }
+
+  /* 氣泡說明視窗 */
+  .btn-info { background-color: var(--btn-symbol); font-weight: bold; color: #666; }
+  .bubble-window {
+    display: none;
+    position: absolute;
+    top: 110%;
+    right: 0;
+    width: 260px;
+    background-color: #FFFDF8;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
     padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    box-sizing: border-box;
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  h1 {
-    font-size: 1.2rem;
-    margin: 0;
-  }
-
-  button {
-    font-size: 1rem;
-    padding: 0.6rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.3rem;
-    background-color: var(--btn-bg);
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.1);
+    z-index: 100;
+    font-size: 0.9rem;
     color: var(--text-color);
-    cursor: pointer;
-    touch-action: manipulation;
+  }
+  .bubble-window ul { margin: 0; padding-left: 1.2rem; }
+  .bubble-window li { margin-bottom: 0.4rem; line-height: 1.4; }
+  .bubble-window li:last-child { margin-bottom: 0; }
+
+  .editor-container { flex-grow: 1; display: flex; flex-direction: column; margin-bottom: 0.5rem; }
+  textarea { 
+    flex-grow: 1; width: 100%; box-sizing: border-box; 
+    font-size: 1.2rem; padding: 0.8rem; 
+    border: 1px solid var(--border-color); border-radius: 0.5rem; 
+    background-color: #FFFDF8; color: var(--text-color); 
+    resize: none; line-height: 1.6; 
   }
 
-  button:active {
-    background-color: var(--btn-active);
-  }
+  /* 符號與日期區 */
+  .symbol-bar { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; overflow-x: auto; padding-bottom: 0.3rem; }
+  .symbol-bar button { flex: 0 0 auto; min-width: 3.5rem; background-color: var(--btn-symbol); }
 
-  .editor-container {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0.5rem;
-  }
+  /* 移動功能區 (藍色調) */
+  .toolbar-move { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.5rem; }
+  .toolbar-move button { background-color: var(--btn-move); font-weight: bold; }
 
-  textarea {
-    flex-grow: 1;
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1.2rem;
-    padding: 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    background-color: #FFFDF8;
-    color: var(--text-color);
-    resize: none;
-    line-height: 1.6;
-  }
+  /* 編輯與紀錄區 (綠色/橘色調) */
+  .toolbar-action { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.5rem; }
+  .btn-undo, .btn-redo { background-color: var(--btn-history); }
+  .btn-delete { background-color: var(--btn-edit); }
 
-  textarea:focus {
-    outline: 2px solid var(--primary-btn);
-  }
+  /* 數字鍵盤區 */
+  .numpad-wrapper { margin-bottom: 0.5rem; padding: 0.5rem; background-color: #F4EED8; border: 1px solid var(--border-color); border-radius: 0.5rem; }
+  .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .numpad-grid button { padding: 1rem 0; font-size: 1.5rem; font-weight: bold; background-color: #FFFDF8; }
 
-  .symbol-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    overflow-x: auto;
-    padding-bottom: 0.3rem;
-  }
+  /* 草稿區 */
+  .draft-section { border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-bottom: 0.5rem; }
+  .draft-item { display: flex; flex-direction: column; padding-bottom: 0.5rem; border-bottom: 1px dashed var(--border-color); }
+  .draft-row { display: flex; justify-content: space-between; align-items: center; }
+  .draft-preview { font-size: 0.85rem; color: #666; margin-top: 0.2rem; }
+  .btn-draft-del { background-color: var(--btn-danger); border-color: #ffcdd2; font-size: 0.8rem; }
 
-  .symbol-bar button {
-    flex: 0 0 auto;
-    min-width: 3rem;
-  }
-
-  .toolbar {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .numpad-wrapper {
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    background-color: #F4EED8;
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-  }
-
-  .numpad-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-  }
-
-  .numpad-grid button {
-    padding: 1rem 0;
-    font-size: 1.5rem;
-    font-weight: bold;
-    background-color: #FFFDF8;
-  }
-
-  .numpad-grid button:active {
-    background-color: var(--btn-active);
-  }
-
-  .numpad-grid .numpad-action {
-    font-size: 1rem;
-    background-color: var(--btn-bg);
-  }
-
-  .draft-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
-    border-top: 1px solid var(--border-color);
-    padding-top: 0.5rem;
-  }
-
-  .draft-item {
-    display: flex;
-    flex-direction: column;
-    border-bottom: 1px dashed var(--border-color);
-    padding-bottom: 0.5rem;
-  }
-  
-  .draft-item:last-child {
-    border-bottom: none;
-  }
-
-  .draft-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .draft-row span {
-    font-size: 0.95rem;
-    font-weight: bold;
-    flex-grow: 1;
-  }
-  
-  .btn-group {
-    display: flex;
-    gap: 0.3rem;
-  }
-
-  .btn-delete {
-    background-color: var(--danger-btn);
-    color: #fff;
-    border: none;
-  }
-
-  .btn-delete:active {
-    background-color: #D67A7A;
-  }
-
-  .draft-preview {
-    font-size: 0.85rem;
-    color: #666666;
-    margin-top: 0.3rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .action-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: auto;
-  }
-
-  .action-bar button {
-    flex: 1;
-    background-color: var(--primary-btn);
-    color: #fff;
-    font-weight: bold;
-    border: none;
-    padding: 0.8rem;
-  }
-
-  .action-bar button:active {
-    background-color: #B88561;
-  }
+  /* 底部功能區 */
+  .action-bar { display: flex; gap: 0.5rem; margin-top: auto; }
+  .action-bar button { flex: 1; font-weight: bold; border: none; padding: 0.8rem; color: #fff; border-radius: 0.3rem; }
+  .btn-clear { background-color: var(--btn-action-clear); }
+  .btn-copy { background-color: var(--btn-action-copy); }
 </style>
 </head>
 <body>
 
   <div class="header">
-    <h1>簡易編輯器</h1>
-    <div>
+    <h1>那個手機打字好痛苦的輔助編輯器</h1>
+    <div class="header-actions">
+      <button class="btn-info" onclick="toggleBubble()">說明</button>
       <button onclick="changeFontSize(-2)">A-</button>
       <button onclick="changeFontSize(2)">A+</button>
+      
+      <div id="info-bubble" class="bubble-window">
+        <ul>
+          <li>本工具草稿僅儲存於本機裝置，不具備雲端上傳與同步功能。</li>
+          <li>支援離線使用，確保資料隱私。</li>
+          <li>提醒：草稿存放於瀏覽器暫存空間，非雲端備份。</li>
+        </ul>
+      </div>
     </div>
   </div>
 
   <div class="symbol-bar">
     <button onclick="insertDate()">日期</button>
-    <button onclick="toggleNumpad()">9</button>
+    <button onclick="toggleNumpad()">123</button>
     <button onclick="insertText('「')">「</button>
     <button onclick="insertText('」')">」</button>
-    <button onclick="insertText('〈')">〈</button>
-    <button onclick="insertText('〉')">〉</button>
-    <button onclick="insertText('《')">《</button>
-    <button onclick="insertText('》')">》</button>
     <button onclick="insertText('、')">、</button>
     <button onclick="insertText('。')">。</button>
   </div>
 
   <div class="editor-container">
-    <textarea id="editor" placeholder="在此輸入內容..."></textarea>
+    <textarea id="editor" placeholder="在此輸入內容..." oninput="saveHistory()"></textarea>
   </div>
 
-  <div class="toolbar">
+  <div class="toolbar-move">
     <button onclick="moveCursor('up')">上</button>
     <button onclick="moveCursor('down')">下</button>
     <button onclick="moveCursor('left')">左</button>
     <button onclick="moveCursor('right')">右</button>
-    <button onclick="deleteChar()">刪除</button>
+  </div>
+  
+  <div class="toolbar-action">
+    <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>復原</button>
+    <button class="btn-redo" id="redoBtn" onclick="redo()" disabled>取消復原</button>
+    <button class="btn-delete" onclick="deleteChar()">刪除</button>
   </div>
 
   <div id="numpad" class="numpad-wrapper" style="display: none;">
@@ -258,9 +172,9 @@
       <button onclick="insertText('7')">7</button>
       <button onclick="insertText('8')">8</button>
       <button onclick="insertText('9')">9</button>
-      <button class="numpad-action" onclick="toggleNumpad()">收起</button>
+      <button onclick="toggleNumpad()" style="font-size:0.9rem">收起</button>
       <button onclick="insertText('0')">0</button>
-      <button class="numpad-action" onclick="deleteChar()">刪除</button>
+      <button onclick="deleteChar()" style="font-size:0.9rem">刪除</button>
     </div>
   </div>
 
@@ -271,223 +185,176 @@
         <div class="btn-group">
           <button onclick="saveDraft(1)">存入</button>
           <button onclick="loadDraft(1)">讀取</button>
-          <button class="btn-delete" onclick="clearDraft(1)">刪除</button>
+          <button class="btn-draft-del" onclick="clearDraft(1)">刪除</button>
         </div>
       </div>
-      <div class="draft-preview" id="preview-1">尚無存檔紀錄</div>
-    </div>
-    
-    <div class="draft-item">
-      <div class="draft-row">
-        <span>草稿位 2</span>
-        <div class="btn-group">
-          <button onclick="saveDraft(2)">存入</button>
-          <button onclick="loadDraft(2)">讀取</button>
-          <button class="btn-delete" onclick="clearDraft(2)">刪除</button>
-        </div>
-      </div>
-      <div class="draft-preview" id="preview-2">尚無存檔紀錄</div>
-    </div>
-
-    <div class="draft-item">
-      <div class="draft-row">
-        <span>草稿位 3</span>
-        <div class="btn-group">
-          <button onclick="saveDraft(3)">存入</button>
-          <button onclick="loadDraft(3)">讀取</button>
-          <button class="btn-delete" onclick="clearDraft(3)">刪除</button>
-        </div>
-      </div>
-      <div class="draft-preview" id="preview-3">尚無存檔紀錄</div>
+      <div id="preview-1" class="draft-preview">尚無存檔紀錄</div>
     </div>
   </div>
 
   <div class="action-bar">
-    <button onclick="copyAll()">一鍵複製全文</button>
+    <button class="btn-clear" onclick="clearEditor()">清除</button>
+    <button class="btn-copy" onclick="copyAll()">複製全文</button>
   </div>
 
   <script>
+    /* 核心邏輯 */
     const editor = document.getElementById('editor');
     let currentFontSize = 16;
-    const PREVIEW_CHAR_LIMIT = 10; 
+    let historyStack = ['']; 
+    let redoStack = [];
+    const MAX_HISTORY = 30;
 
-    window.onload = function() {
-        updatePreview(1);
-        updatePreview(2);
-        updatePreview(3);
-    };
-
-    function getFormattedDate() {
-      const d = new Date();
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      return `[${year}/${month}/${day} ${hours}:${minutes}]`;
+    // 氣泡視窗開關
+    function toggleBubble() {
+      const bubble = document.getElementById('info-bubble');
+      bubble.style.display = (bubble.style.display === 'block') ? 'none' : 'block';
     }
 
-    function insertDate() {
-      const d = new Date();
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      insertText(`${year}/${month}/${day}`);
+    // 點擊編輯區時自動隱藏氣泡視窗
+    editor.addEventListener('focus', () => {
+      document.getElementById('info-bubble').style.display = 'none';
+    });
+
+    function saveHistory() {
+      const currentText = editor.value;
+      if (currentText === historyStack[historyStack.length - 1]) return;
+      historyStack.push(currentText);
+      if (historyStack.length > MAX_HISTORY) historyStack.shift();
+      redoStack = []; 
+      updateHistoryButtons();
     }
 
-    function updatePreview(slot) {
-      const rawData = localStorage.getItem('editor_draft_' + slot);
-      const previewElement = document.getElementById('preview-' + slot);
-
-      if (!rawData) {
-        previewElement.textContent = '尚無存檔紀錄';
-        return;
+    function undo() {
+      if (historyStack.length > 1) {
+        redoStack.push(historyStack.pop());
+        editor.value = historyStack[historyStack.length - 1];
+        updateHistoryButtons();
       }
-
-      let draftData;
-      try {
-        draftData = JSON.parse(rawData);
-      } catch (e) {
-        draftData = { time: '[無時間紀錄]', text: rawData };
-      }
-
-      let cleanText = draftData.text.replace(/\n/g, ' ').trim();
-      let previewText = cleanText.substring(0, PREVIEW_CHAR_LIMIT);
-      
-      if (cleanText.length > PREVIEW_CHAR_LIMIT) {
-        previewText += '...';
-      }
-
-      previewElement.textContent = `${draftData.time} ${previewText}`;
     }
 
-    function changeFontSize(change) {
-      currentFontSize += change;
-      if (currentFontSize < 12) currentFontSize = 12;
-      if (currentFontSize > 32) currentFontSize = 32;
-      document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+    function redo() {
+      if (redoStack.length > 0) {
+        const val = redoStack.pop();
+        historyStack.push(val);
+        editor.value = val;
+        updateHistoryButtons();
+      }
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('undoBtn').disabled = (historyStack.length <= 1);
+      document.getElementById('redoBtn').disabled = (redoStack.length === 0);
     }
 
     function insertText(text) {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
-      const currentText = editor.value;
-      
-      editor.value = currentText.substring(0, start) + text + currentText.substring(end);
+      editor.value = editor.value.substring(0, start) + text + editor.value.substring(end);
       editor.focus();
       editor.setSelectionRange(start + text.length, start + text.length);
+      saveHistory(); 
     }
 
     function deleteChar() {
       editor.focus();
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
-      const currentText = editor.value;
-
-      if (start === end) {
-        if (start > 0) {
-          editor.value = currentText.substring(0, start - 1) + currentText.substring(end);
-          editor.setSelectionRange(start - 1, start - 1);
-        }
+      if (start === end && start > 0) {
+        editor.value = editor.value.substring(0, start - 1) + editor.value.substring(end);
+        editor.setSelectionRange(start - 1, start - 1);
       } else {
-        editor.value = currentText.substring(0, start) + currentText.substring(end);
+        editor.value = editor.value.substring(0, start) + editor.value.substring(end);
         editor.setSelectionRange(start, start);
       }
+      saveHistory(); 
     }
 
-    function toggleNumpad() {
-      const numpad = document.getElementById('numpad');
-      numpad.style.display = (numpad.style.display === 'none') ? 'block' : 'none';
-      editor.focus();
+    function clearEditor() {
+      if (editor.value.trim() === '') return;
+      if (confirm('確定要清除輸入區內容嗎？')) {
+        editor.value = '';
+        saveHistory();
+        editor.focus();
+      }
     }
 
     function moveCursor(direction) {
       editor.focus();
       let start = editor.selectionStart;
       let text = editor.value;
-
-      if (direction === 'left' && start > 0) {
-        editor.setSelectionRange(start - 1, start - 1);
-      } else if (direction === 'right' && start < text.length) {
-        editor.setSelectionRange(start + 1, start + 1);
-      } else if (direction === 'up') {
-        let prevLineEnd = text.lastIndexOf('\n', start - 1);
-        let prevLineStart = text.lastIndexOf('\n', prevLineEnd - 1);
-        if (prevLineEnd !== -1) {
-            let currentLineOffset = start - prevLineEnd - 1;
-            let newPos = prevLineStart + 1 + currentLineOffset;
-            if (newPos > prevLineEnd) newPos = prevLineEnd;
-            editor.setSelectionRange(newPos, newPos);
-        } else {
-            editor.setSelectionRange(0, 0);
+      if (direction === 'left' && start > 0) editor.setSelectionRange(start - 1, start - 1);
+      else if (direction === 'right' && start < text.length) editor.setSelectionRange(start + 1, start + 1);
+      else if (direction === 'up' || direction === 'down') {
+        const lines = text.split('\n');
+        let cur = 0, lineIdx = 0, colIdx = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (start <= cur + lines[i].length) { lineIdx = i; colIdx = start - cur; break; }
+          cur += lines[i].length + 1;
         }
-      } else if (direction === 'down') {
-         let nextLineStart = text.indexOf('\n', start);
-         if (nextLineStart !== -1) {
-             let currentLineStart = text.lastIndexOf('\n', start - 1);
-             let currentLineOffset = start - currentLineStart - 1;
-             let nextLineEnd = text.indexOf('\n', nextLineStart + 1);
-             if (nextLineEnd === -1) nextLineEnd = text.length;
-             let newPos = nextLineStart + 1 + currentLineOffset;
-             if (newPos > nextLineEnd) newPos = nextLineEnd;
-             editor.setSelectionRange(newPos, newPos);
-         } else {
-             editor.setSelectionRange(text.length, text.length);
-         }
+        if (direction === 'up' && lineIdx > 0) {
+          let nPos = 0; for (let j = 0; j < lineIdx - 1; j++) nPos += lines[j].length + 1;
+          editor.setSelectionRange(nPos + Math.min(colIdx, lines[lineIdx-1].length), nPos + Math.min(colIdx, lines[lineIdx-1].length));
+        } else if (direction === 'down' && lineIdx < lines.length - 1) {
+          let nPos = 0; for (let j = 0; j <= lineIdx; j++) nPos += lines[j].length + 1;
+          editor.setSelectionRange(nPos + Math.min(colIdx, lines[lineIdx+1].length), nPos + Math.min(colIdx, lines[lineIdx+1].length));
+        }
       }
     }
 
-    function saveDraft(slot) {
-      const content = editor.value;
-      const timestamp = getFormattedDate();
-      const draftData = { time: timestamp, text: content };
-      localStorage.setItem('editor_draft_' + slot, JSON.stringify(draftData));
-      updatePreview(slot); 
-      alert('已存入草稿位 ' + slot);
+    function insertDate() {
+      const d = new Date();
+      insertText(`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
     }
 
-    function loadDraft(slot) {
-      const rawData = localStorage.getItem('editor_draft_' + slot);
-      if (!rawData) {
-        alert('草稿位 ' + slot + ' 目前為空。');
-        return;
-      }
-      if (editor.value.trim() !== '') {
-        const confirmLoad = confirm('編輯區內已有文字，讀取草稿將會覆蓋當前內容。是否繼續？');
-        if (!confirmLoad) return;
-      }
-      try {
-        const draftData = JSON.parse(rawData);
-        editor.value = draftData.text; 
-      } catch (e) {
-        editor.value = rawData;
-      }
+    function toggleNumpad() {
+      const n = document.getElementById('numpad');
+      n.style.display = (n.style.display === 'none') ? 'block' : 'none';
+      editor.focus();
     }
 
-    // 新增：清除指定位置的草稿
-    function clearDraft(slot) {
-      const rawData = localStorage.getItem('editor_draft_' + slot);
-      if (!rawData) return;
-
-      const confirmDelete = confirm('確定要永久刪除草稿位 ' + slot + ' 的內容嗎？');
-      if (confirmDelete) {
-        localStorage.removeItem('editor_draft_' + slot);
-        updatePreview(slot);
-        alert('草稿位 ' + slot + ' 已刪除。');
-      }
+    function changeFontSize(change) {
+      currentFontSize = Math.min(Math.max(currentFontSize + change, 12), 32);
+      document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
     }
 
     function copyAll() {
       editor.select();
-      editor.setSelectionRange(0, 99999); 
-      navigator.clipboard.writeText(editor.value).then(() => {
-        alert('全文已複製！');
-        const length = editor.value.length;
-        editor.setSelectionRange(length, length);
-      }).catch(err => {
-        alert('複製失敗，請手動全選複製。');
-      });
+      navigator.clipboard.writeText(editor.value).then(() => alert('全文已複製！'));
     }
+
+    /* 草稿邏輯 */
+    function saveDraft(slot) {
+      const d = new Date();
+      const time = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      localStorage.setItem('draft_'+slot, JSON.stringify({time, text: editor.value}));
+      updatePreview(slot);
+      alert('已存入草稿 ' + slot);
+    }
+    function loadDraft(slot) {
+      const raw = localStorage.getItem('draft_'+slot);
+      if (!raw) return alert('無資料');
+      if (editor.value.trim() !== '' && !confirm('讀取將覆蓋現有文字，確定嗎？')) return;
+      editor.value = JSON.parse(raw).text;
+      saveHistory();
+    }
+    function clearDraft(slot) {
+      if (confirm('確定刪除草稿 ' + slot + '？')) {
+        localStorage.removeItem('draft_'+slot);
+        updatePreview(slot);
+      }
+    }
+    function updatePreview(slot) {
+      const raw = localStorage.getItem('draft_'+slot);
+      const el = document.getElementById('preview-'+slot);
+      if(raw) {
+        const data = JSON.parse(raw);
+        el.textContent = `[${data.time}] ${data.text.substring(0,10).replace(/\n/g,' ')}...`;
+      } else {
+        el.textContent = '尚無存檔紀錄';
+      }
+    }
+    window.onload = () => updatePreview(1);
   </script>
 </body>
 </html>
