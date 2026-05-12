@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>手機打字好痛苦</title>
 <style>
+  /* ══ 亮色主題（預設） ══ */
   :root {
     --base-font-size: 16px;
     --bg: #FDF6E3;
     --text: #333333;
     --border: #D0C9B0;
     --area-bg: #F7F0DC;
+    --editor-bg: #FFFDF8;
+    --bubble-bg: #FFFDF8;
+    --shadow: rgba(80,50,10,0.13);
 
     --btn-default-bg: #EDEADE;
     --btn-default-text: #444444;
@@ -25,14 +29,55 @@
     --btn-draft-bg: #EDEADE;
     --btn-draft-del-bg: #F0E4E4;
     --btn-draft-del-text: #7A3030;
-
     --btn-refresh-bg: #2F4F4F;
     --btn-refresh-text: #FFFFFF;
     --btn-copy-bg: #C8925A;
     --btn-copy-text: #FFFFFF;
-
     --btn-kbd-on-bg: #B8D4B8;
     --btn-kbd-off-bg: #DEDAD0;
+
+    --ctrl-label: #9A8A6A;
+    --draft-title: #5A4A2A;
+    --draft-preview: #888888;
+    --focus-outline: #C8925A;
+    --warn-color: #8B3030;
+  }
+
+  /* ══ 深色主題 ══ */
+  body.dark {
+    --bg: #1E1A14;
+    --text: #D9CEB0;
+    --border: #4A4232;
+    --area-bg: #2A2418;
+    --editor-bg: #252018;
+    --bubble-bg: #2A2418;
+    --shadow: rgba(0,0,0,0.4);
+
+    --btn-default-bg: #302A20;
+    --btn-default-text: #C8BC98;
+    --btn-move-bg: #283028;
+    --btn-move-text: #A8C4A8;
+    --btn-history-bg: #243024;
+    --btn-history-text: #90B890;
+    --btn-delete-bg: #8C4820;
+    --btn-delete-text: #FFE8D8;
+    --btn-symbol-bg: #302A20;
+    --btn-symbol-text: #C0B080;
+    --btn-draft-bg: #302A20;
+    --btn-draft-del-bg: #3A2020;
+    --btn-draft-del-text: #C88080;
+    --btn-refresh-bg: #1A3030;
+    --btn-refresh-text: #A8D0C8;
+    --btn-copy-bg: #7A4E28;
+    --btn-copy-text: #FFE8D0;
+    --btn-kbd-on-bg: #2A4030;
+    --btn-kbd-off-bg: #2A2418;
+
+    --ctrl-label: #7A6E54;
+    --draft-title: #C0A870;
+    --draft-preview: #706858;
+    --focus-outline: #A0703A;
+    --warn-color: #D08080;
   }
 
   * { -webkit-appearance: none; box-sizing: border-box; }
@@ -44,29 +89,32 @@
     background-color: var(--bg);
     color: var(--text);
     font-family: "PingFang TC", "Noto Sans TC", sans-serif;
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     display: flex;
     flex-direction: column;
     height: 100dvh;
     overflow: hidden;
+    transition: background-color 0.2s, color 0.2s;
   }
 
+  /* ══ 頂部固定區（三行） ══ */
   .sticky-header {
     flex-shrink: 0;
     background-color: var(--bg);
     border-bottom: 1px solid var(--border);
-    padding: 0.45rem 0.75rem;
+    padding: 0.4rem 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
     z-index: 10;
+    transition: background-color 0.2s;
   }
 
+  /* 第一行：切換系統鍵盤 */
   #kbdToggleBtn {
     width: 100%;
     font-size: 0.95rem;
-    padding: 0.55rem;
+    padding: 0.5rem;
     background-color: var(--btn-kbd-off-bg);
     color: var(--btn-default-text);
     font-weight: bold;
@@ -76,6 +124,7 @@
     color: #1A3A1A;
   }
 
+  /* 第二行：重新整理 + 複製全文 */
   .top-action-row {
     display: flex;
     gap: 0.5rem;
@@ -84,14 +133,87 @@
     flex: 1;
     font-weight: bold;
     font-size: 1rem;
-    padding: 0.65rem;
+    padding: 0.6rem;
     border: none;
     border-radius: 0.4rem;
-    color: #fff;
   }
-  .btn-refresh { background-color: var(--btn-refresh-bg) !important; color: var(--btn-refresh-text) !important; }
-  .btn-copy-top { background-color: var(--btn-copy-bg) !important; color: var(--btn-copy-text) !important; }
+  .btn-refresh {
+    background-color: var(--btn-refresh-bg) !important;
+    color: var(--btn-refresh-text) !important;
+  }
+  .btn-copy-top {
+    background-color: var(--btn-copy-bg) !important;
+    color: var(--btn-copy-text) !important;
+  }
 
+  /* 第三行：說明 / 樣式 / 框- 框+ / A- A+ */
+  .settings-row {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    position: relative;
+  }
+  .settings-row button {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 0.42rem 0.2rem;
+    background-color: var(--btn-default-bg);
+    color: var(--btn-default-text);
+  }
+  .settings-divider {
+    width: 1px;
+    height: 1.4rem;
+    background-color: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ══ 氣泡視窗（共用） ══ */
+  .bubble-window {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    width: 230px;
+    background-color: var(--bubble-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.8rem 0.9rem;
+    box-shadow: 0 4px 14px var(--shadow);
+    z-index: 200;
+    font-size: 0.86rem;
+    color: var(--text);
+  }
+  /* 說明氣泡靠右 */
+  #info-bubble { left: auto; right: 0; width: 260px; }
+
+  .bubble-window ul { margin: 0; padding-left: 1.1rem; }
+  .bubble-window li { margin-bottom: 0.4rem; line-height: 1.5; }
+  .bubble-window li:last-child { margin-bottom: 0; }
+  .bubble-window .warn { color: var(--warn-color); font-weight: bold; }
+
+  /* 樣式選單氣泡 */
+  .theme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .theme-btn {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.7rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 0.3rem;
+    background-color: var(--btn-default-bg) !important;
+    color: var(--btn-default-text) !important;
+    border: 1px solid var(--border) !important;
+  }
+  .theme-btn.active {
+    background-color: var(--btn-history-bg) !important;
+    color: var(--btn-history-text) !important;
+    font-weight: bold;
+  }
+
+  /* ══ 滾動區 ══ */
   .scroll-area {
     flex: 1;
     overflow-y: auto;
@@ -103,28 +225,7 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .title-row h1 {
-    font-size: 0.9rem;
-    margin: 0;
-    font-weight: bold;
-    color: #5A4A2A;
-    flex: 1;
-    line-height: 1.3;
-  }
-  .title-row-actions {
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
-    position: relative;
-    flex-shrink: 0;
-  }
-
+  /* ══ 通用按鈕 ══ */
   button {
     font-size: 1rem;
     padding: 0.55rem 0.5rem;
@@ -138,61 +239,38 @@
     -webkit-user-select: none;
     line-height: 1.2;
     text-align: center;
-    transition: filter 0.1s;
+    transition: filter 0.1s, background-color 0.2s, color 0.2s;
   }
   button:active { filter: brightness(0.88); }
   button:disabled { opacity: 0.3; }
 
-  .btn-info {
-    background-color: var(--btn-symbol-bg);
-    color: #666;
-    font-weight: bold;
-    font-size: 0.9rem;
-  }
-
-  .bubble-window {
-    display: none;
-    position: absolute;
-    top: calc(100% + 0.4rem);
-    right: 0;
-    width: 260px;
-    background-color: #FFFDF8;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    padding: 0.9rem 1rem;
-    box-shadow: 0 4px 14px rgba(80,50,10,0.13);
-    z-index: 200;
-    font-size: 0.88rem;
-    color: var(--text);
-  }
-  .bubble-window ul { margin: 0; padding-left: 1.2rem; }
-  .bubble-window li { margin-bottom: 0.45rem; line-height: 1.5; }
-  .bubble-window li:last-child { margin-bottom: 0; }
-  .bubble-window .warn { color: #8B3030; font-weight: bold; }
-
+  /* ══ 編輯區 ══ */
   .editor-container { display: flex; flex-direction: column; }
   textarea {
     width: 100%;
-    min-height: 9rem;
+    min-height: 13rem;
     font-size: 1.2rem;
     padding: 0.8rem;
     border: 1px solid var(--border);
     border-radius: 0.5rem;
-    background-color: #FFFDF8;
+    background-color: var(--editor-bg);
     color: var(--text);
-    resize: vertical;
+    resize: none;
     line-height: 1.6;
     -webkit-appearance: none;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   }
-  textarea:focus { outline: 2px solid #C8925A; }
+  textarea:focus { outline: 2px solid var(--focus-outline); }
 
+  /* ══ 控制台標籤 ══ */
   .ctrl-label {
     font-size: 0.75rem;
-    color: #9A8A6A;
+    color: var(--ctrl-label);
     margin-bottom: 0.2rem;
     padding-left: 0.1rem;
   }
 
+  /* ══ 方向鍵 ══ */
   .toolbar-move {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -205,6 +283,7 @@
     font-size: 1.05rem;
   }
 
+  /* ══ 復原／重做／刪除 ══ */
   .toolbar-action {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -221,6 +300,7 @@
     font-weight: bold;
   }
 
+  /* ══ 插入工具列 ══ */
   .toolbar-insert {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -231,6 +311,7 @@
     color: var(--btn-symbol-text);
   }
 
+  /* ══ 符號面板 ══ */
   .symbol-panel {
     display: none;
     background-color: var(--area-bg);
@@ -242,11 +323,12 @@
   .symbol-panel button {
     flex: 0 0 auto;
     min-width: 3rem;
-    background-color: #FFFDF8;
+    background-color: var(--editor-bg);
     color: var(--btn-symbol-text);
     font-size: 1.05rem;
   }
 
+  /* ══ 數字鍵盤 ══ */
   .numpad-wrapper {
     background-color: var(--area-bg);
     border: 1px solid var(--border);
@@ -254,15 +336,23 @@
     padding: 0.5rem;
   }
   .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
-  .numpad-grid button { padding: 0.9rem 0; font-size: 1.45rem; font-weight: bold; background-color: #FFFDF8; }
-  .numpad-grid .num-action { font-size: 0.9rem; background-color: var(--btn-default-bg); }
+  .numpad-grid button {
+    padding: 0.9rem 0;
+    font-size: 1.45rem;
+    font-weight: bold;
+    background-color: var(--editor-bg);
+  }
+  .numpad-grid .num-action {
+    font-size: 0.9rem;
+    background-color: var(--btn-default-bg);
+  }
 
+  /* ══ 草稿區 ══ */
   .draft-section {
     border-top: 1px solid var(--border);
     padding-top: 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0;
   }
   .draft-item {
     display: flex;
@@ -272,15 +362,11 @@
     border-bottom: 1px dashed var(--border);
   }
   .draft-item:last-child { border-bottom: none; }
-  .draft-row {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
+  .draft-row { display: flex; align-items: center; gap: 0.4rem; }
   .draft-row-title {
     font-size: 0.82rem;
     font-weight: bold;
-    color: #5A4A2A;
+    color: var(--draft-title);
     flex-shrink: 0;
     min-width: 3.2rem;
   }
@@ -302,7 +388,7 @@
   }
   .draft-preview {
     font-size: 0.78rem;
-    color: #888;
+    color: var(--draft-preview);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -313,39 +399,76 @@
 </head>
 <body>
 
+<!-- ══ 頂部固定區 ══ -->
 <header class="sticky-header" role="banner">
-  <button id="kbdToggleBtn" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">切換系統鍵盤（目前：關閉）</button>
+
+  <!-- 第一行：切換系統鍵盤 -->
+  <button id="kbdToggleBtn" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">
+    切換系統鍵盤（目前：關閉）
+  </button>
+
+  <!-- 第二行：重新整理 + 複製全文 -->
   <div class="top-action-row">
     <button class="btn-refresh" onclick="resetEditor()" aria-label="重新整理">重新整理</button>
     <button class="btn-copy-top" onclick="copyAll()" aria-label="複製全文">複製全文</button>
   </div>
-</header>
 
-<main class="scroll-area" role="main">
+  <!-- 第三行：說明 | 樣式 | 框- 框+ | A- A+ -->
+  <div class="settings-row" id="settings-row">
 
-  <div class="title-row">
-    <h1>輔助輸入</h1>
-    <div class="title-row-actions">
-      <button class="btn-info" onclick="toggleBubble()" aria-label="說明">說明</button>
-      <button onclick="changeFontSize(-2)" aria-label="縮小字體">A-</button>
-      <button onclick="changeFontSize(2)" aria-label="放大字體">A+</button>
-      <div id="info-bubble" class="bubble-window" role="tooltip" aria-live="polite">
-        <ul>
-          <li>草稿儲存於本機裝置瀏覽器暫存，無雲端同步備份功能。</li>
-          <li>可離線使用。</li>
-          <li class="warn">不建議輸入機敏資料（如密碼、身份證號等）。</li>
-        </ul>
+    <!-- 說明 -->
+    <button class="btn-info-sm" onclick="toggleInfoBubble()" aria-label="說明">說明</button>
+    <div id="info-bubble" class="bubble-window" role="tooltip">
+      <ul>
+        <li>草稿儲存於本機裝置瀏覽器暫存，無雲端同步備份功能。</li>
+        <li>可離線使用。</li>
+        <li class="warn">不建議輸入機敏資料（如密碼、身份證號等）。</li>
+      </ul>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <!-- 樣式 -->
+    <button onclick="toggleThemeBubble()" aria-label="切換樣式">樣式</button>
+    <div id="theme-bubble" class="bubble-window" style="left:0; right:auto; width:180px;">
+      <div class="theme-list">
+        <button class="theme-btn active" id="theme-light" onclick="setTheme('light')" aria-label="亮色主題">亮色（預設）</button>
+        <button class="theme-btn" id="theme-dark" onclick="setTheme('dark')" aria-label="深色主題">深色</button>
       </div>
     </div>
-  </div>
 
+    <div class="settings-divider"></div>
+
+    <!-- 框- 框+ -->
+    <button onclick="changeEditorSize(-3)" aria-label="縮短輸入框">框-</button>
+    <button onclick="changeEditorSize(3)" aria-label="加長輸入框">框+</button>
+
+    <div class="settings-divider"></div>
+
+    <!-- A- A+ -->
+    <button onclick="changeFontSize(-2)" aria-label="縮小字體">A-</button>
+    <button onclick="changeFontSize(2)" aria-label="放大字體">A+</button>
+
+  </div>
+</header>
+
+<!-- ══ 滾動區 ══ -->
+<main class="scroll-area" role="main">
+
+  <!-- 主編輯區 -->
   <div class="editor-container">
-    <textarea id="editor" placeholder="在此輸入內容..." inputmode="none" aria-label="主編輯區" oninput="onEditorInput()"></textarea>
+    <textarea
+      id="editor"
+      placeholder="在此輸入內容..."
+      inputmode="none"
+      aria-label="主編輯區"
+      oninput="onEditorInput()"
+    ></textarea>
   </div>
 
+  <!-- 方向鍵 -->
   <div>
-    
-    <div class="toolbar-move" role="group" aria-label="游標移動">
+        <div class="toolbar-move" role="group" aria-label="游標移動">
       <button onclick="moveCursor('up')" aria-label="向上">上</button>
       <button onclick="moveCursor('down')" aria-label="向下">下</button>
       <button onclick="moveCursor('left')" aria-label="向左">左</button>
@@ -353,6 +476,7 @@
     </div>
   </div>
 
+  <!-- 復原／重做／刪除 -->
   <div class="toolbar-action" role="group" aria-label="編輯操作">
     <button class="btn-undo" id="undoBtn" onclick="undo()" disabled aria-label="復原">復原</button>
     <button class="btn-redo" id="redoBtn" onclick="redo()" disabled aria-label="取消復原">取消復原</button>
@@ -363,12 +487,14 @@
       onpointercancel="stopDelete()">刪除</button>
   </div>
 
+  <!-- 插入工具 -->
   <div class="toolbar-insert" role="group" aria-label="插入工具">
     <button onclick="insertDate()" aria-label="插入今日日期">插入日期</button>
     <button onclick="toggleNumpad()" aria-label="數字鍵盤">數字鍵盤</button>
     <button id="symbolToggleBtn" onclick="toggleSymbol()" aria-label="插入符號">插入符號</button>
   </div>
 
+  <!-- 符號面板 -->
   <div id="symbol-panel" class="symbol-panel" aria-label="符號選單">
     <div class="sym-row">
       <button onclick="insertText('「')">「</button>
@@ -382,6 +508,7 @@
     </div>
   </div>
 
+  <!-- 數字鍵盤 -->
   <div id="numpad" class="numpad-wrapper" style="display:none" aria-label="數字鍵盤">
     <div class="numpad-grid">
       <button onclick="insertText('1')">1</button>
@@ -399,6 +526,7 @@
     </div>
   </div>
 
+  <!-- 草稿管理 -->
   <div class="draft-section" role="group" aria-label="草稿管理">
     <div class="ctrl-label">草稿管理</div>
 
@@ -444,31 +572,76 @@
 <script>
   const editor = document.getElementById('editor');
   let currentFontSize = 16;
+  let currentEditorRem = 13;  // 輸入框預設高度 rem
+  const EDITOR_MIN = 6;
+  const EDITOR_MAX = 40;
   let historyStack = [''];
   let redoStack = [];
   let kbdEnabled = false;
+  let currentTheme = 'light';
   const MAX_HISTORY = 50;
   const PREVIEW_LEN = 16;
 
   window.onload = () => {
     updatePreview(1); updatePreview(2); updatePreview(3);
     updateHistoryButtons();
+    // 讀取儲存的主題
+    const savedTheme = localStorage.getItem('editor_theme');
+    if (savedTheme) setTheme(savedTheme, true);
   };
 
-  function toggleBubble() {
-    const b = document.getElementById('info-bubble');
-    b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+  /* ══ 氣泡管理 ══ */
+  const allBubbles = ['info-bubble', 'theme-bubble'];
+
+  function closeAllBubbles() {
+    allBubbles.forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
   }
+
+  function toggleInfoBubble() {
+    const b = document.getElementById('info-bubble');
+    const isOpen = b.style.display === 'block';
+    closeAllBubbles();
+    if (!isOpen) b.style.display = 'block';
+  }
+
+  function toggleThemeBubble() {
+    const b = document.getElementById('theme-bubble');
+    const isOpen = b.style.display === 'block';
+    closeAllBubbles();
+    if (!isOpen) b.style.display = 'block';
+  }
+
   document.addEventListener('click', e => {
-    if (!e.target.closest('.title-row-actions'))
-      document.getElementById('info-bubble').style.display = 'none';
+    if (!e.target.closest('.settings-row')) closeAllBubbles();
   });
 
+  /* ══ 主題切換 ══ */
+  function setTheme(theme, silent) {
+    currentTheme = theme;
+    document.body.classList.toggle('dark', theme === 'dark');
+    document.getElementById('theme-light').classList.toggle('active', theme === 'light');
+    document.getElementById('theme-dark').classList.toggle('active', theme === 'dark');
+    if (!silent) {
+      localStorage.setItem('editor_theme', theme);
+      closeAllBubbles();
+    }
+  }
+
+  /* ══ 字體縮放 ══ */
   function changeFontSize(d) {
     currentFontSize = Math.min(Math.max(currentFontSize + d, 12), 32);
     document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
   }
 
+  /* ══ 輸入框高度調整 ══ */
+  function changeEditorSize(d) {
+    currentEditorRem = Math.min(Math.max(currentEditorRem + d, EDITOR_MIN), EDITOR_MAX);
+    editor.style.minHeight = currentEditorRem + 'rem';
+  }
+
+  /* ══ 切換系統鍵盤 ══ */
   function toggleKeyboard() {
     kbdEnabled = !kbdEnabled;
     const btn = document.getElementById('kbdToggleBtn');
@@ -484,6 +657,7 @@
     editor.focus();
   }
 
+  /* ══ 重新整理 ══ */
   function resetEditor() {
     if (editor.value.trim() === '' && historyStack.length <= 1) return;
     if (!confirm('確定重新整理？將清除輸入區內容與復原紀錄，草稿不受影響。')) return;
@@ -492,13 +666,13 @@
     redoStack = [];
     updateHistoryButtons();
     kbdEnabled = false;
-    const btn = document.getElementById('kbdToggleBtn');
     editor.setAttribute('inputmode', 'none');
-    btn.textContent = '切換系統鍵盤（目前：關閉）';
-    btn.classList.remove('kbd-on');
+    document.getElementById('kbdToggleBtn').textContent = '切換系統鍵盤（目前：關閉）';
+    document.getElementById('kbdToggleBtn').classList.remove('kbd-on');
     editor.focus();
   }
 
+  /* ══ 歷史紀錄 ══ */
   function onEditorInput() {
     const cur = editor.value;
     if (cur === historyStack[historyStack.length - 1]) return;
@@ -529,6 +703,7 @@
     document.getElementById('redoBtn').disabled = (redoStack.length === 0);
   }
 
+  /* ══ 刪除字元 ══ */
   function deleteChar() {
     editor.focus();
     const s = editor.selectionStart, e2 = editor.selectionEnd;
@@ -542,6 +717,7 @@
     saveHistory();
   }
 
+  /* ══ 長按連續刪除 ══ */
   let deleteHoldTimer = null, deleteRepeatTimer = null;
   function startDelete() {
     deleteChar();
@@ -555,6 +731,7 @@
     deleteHoldTimer = null; deleteRepeatTimer = null;
   }
 
+  /* ══ 插入文字 ══ */
   function insertText(text) {
     const s = editor.selectionStart, e2 = editor.selectionEnd;
     editor.value = editor.value.substring(0, s) + text + editor.value.substring(e2);
@@ -563,6 +740,7 @@
     saveHistory();
   }
 
+  /* ══ 游標移動 ══ */
   function moveCursor(direction) {
     editor.focus();
     const start = editor.selectionStart, text = editor.value;
@@ -580,28 +758,29 @@
       if (direction === 'up' && lineIdx > 0) {
         let newAcc = 0;
         for (let j = 0; j < lineIdx - 1; j++) newAcc += lines[j].length + 1;
-        const newPos = newAcc + Math.min(colIdx, lines[lineIdx - 1].length);
-        editor.setSelectionRange(newPos, newPos);
+        editor.setSelectionRange(newAcc + Math.min(colIdx, lines[lineIdx-1].length), newAcc + Math.min(colIdx, lines[lineIdx-1].length));
       } else if (direction === 'down' && lineIdx < lines.length - 1) {
         let newAcc = 0;
         for (let j = 0; j <= lineIdx; j++) newAcc += lines[j].length + 1;
-        const newPos = newAcc + Math.min(colIdx, lines[lineIdx + 1].length);
-        editor.setSelectionRange(newPos, newPos);
+        editor.setSelectionRange(newAcc + Math.min(colIdx, lines[lineIdx+1].length), newAcc + Math.min(colIdx, lines[lineIdx+1].length));
       }
     }
   }
 
+  /* ══ 插入日期 ══ */
   function insertDate() {
     const d = new Date();
     insertText(`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
   }
 
+  /* ══ 數字鍵盤 ══ */
   function toggleNumpad() {
     const n = document.getElementById('numpad');
     n.style.display = (n.style.display === 'none') ? 'block' : 'none';
     editor.focus();
   }
 
+  /* ══ 符號面板 ══ */
   function toggleSymbol() {
     const p = document.getElementById('symbol-panel');
     const btn = document.getElementById('symbolToggleBtn');
@@ -612,6 +791,7 @@
     editor.focus();
   }
 
+  /* ══ 複製全文 ══ */
   function copyAll() {
     if (!editor.value) { alert('目前沒有內容可複製。'); return; }
     navigator.clipboard.writeText(editor.value)
@@ -619,11 +799,11 @@
       .catch(() => { editor.select(); editor.setSelectionRange(0, 99999); alert('請手動長按全選後複製。'); });
   }
 
+  /* ══ 草稿 ══ */
   function getTimestamp() {
     const d = new Date();
     return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
-
   function saveDraft(slot) {
     localStorage.setItem('draft_' + slot, JSON.stringify({ time: getTimestamp(), text: editor.value }));
     updatePreview(slot);
