@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>手機打字好痛苦</title>
+<title>手機打字不苦</title>
 <style>
   /* ══ 亮色主題（預設） ══ */
   :root {
@@ -29,18 +29,26 @@
     --btn-draft-bg: #EDEADE;
     --btn-draft-del-bg: #F0E4E4;
     --btn-draft-del-text: #7A3030;
-    --btn-refresh-bg: #2F4F4F;
-    --btn-refresh-text: #FFFFFF;
+
+    --btn-paste-bg: #7A9E7E;
+    --btn-paste-text: #FFFFFF;
+    --btn-clear-bg: #A0845A;
+    --btn-clear-text: #FFFFFF;
     --btn-copy-bg: #C8925A;
     --btn-copy-text: #FFFFFF;
+
+    --btn-kbd-bg: #DEDAD0;
+    --btn-kbd-text: #333333;
     --btn-kbd-on-bg: #B8D4B8;
-    --btn-kbd-off-bg: #DEDAD0;
+    --btn-kbd-on-text: #1A3A1A;
 
     --ctrl-label: #9A8A6A;
     --draft-title: #5A4A2A;
     --draft-preview: #888888;
+    --autosave-title: #3A5A3A;
     --focus-outline: #C8925A;
     --warn-color: #8B3030;
+    --divider: #D0C9B0;
   }
 
   /* ══ 深色主題 ══ */
@@ -66,23 +74,30 @@
     --btn-draft-bg: #302A20;
     --btn-draft-del-bg: #3A2020;
     --btn-draft-del-text: #C88080;
-    --btn-refresh-bg: #1A3030;
-    --btn-refresh-text: #A8D0C8;
+
+    --btn-paste-bg: #2E4E32;
+    --btn-paste-text: #B8D8BC;
+    --btn-clear-bg: #4A3820;
+    --btn-clear-text: #D8C8A0;
     --btn-copy-bg: #7A4E28;
     --btn-copy-text: #FFE8D0;
+
+    --btn-kbd-bg: #2A2418;
+    --btn-kbd-text: #D8C898;       /* 深色模式：淺米色 */
     --btn-kbd-on-bg: #2A4030;
-    --btn-kbd-off-bg: #2A2418;
+    --btn-kbd-on-text: #A8D8B8;
 
     --ctrl-label: #7A6E54;
     --draft-title: #C0A870;
     --draft-preview: #706858;
+    --autosave-title: #70A870;
     --focus-outline: #A0703A;
     --warn-color: #D08080;
+    --divider: #4A4232;
   }
 
   * { -webkit-appearance: none; box-sizing: border-box; }
   button { -webkit-appearance: none; color: var(--btn-default-text); }
-
   html { font-size: var(--base-font-size); transition: font-size 0.25s ease; }
 
   body {
@@ -97,7 +112,7 @@
     transition: background-color 0.2s, color 0.2s;
   }
 
-  /* ══ 頂部固定區（三行） ══ */
+  /* ══ 頂部固定區 ══ */
   .sticky-header {
     flex-shrink: 0;
     background-color: var(--bg);
@@ -110,43 +125,7 @@
     transition: background-color 0.2s;
   }
 
-  /* 第一行：切換系統鍵盤 */
-  #kbdToggleBtn {
-    width: 100%;
-    font-size: 0.95rem;
-    padding: 0.5rem;
-    background-color: var(--btn-kbd-off-bg);
-    color: var(--btn-default-text);
-    font-weight: bold;
-  }
-  #kbdToggleBtn.kbd-on {
-    background-color: var(--btn-kbd-on-bg);
-    color: #1A3A1A;
-  }
-
-  /* 第二行：重新整理 + 複製全文 */
-  .top-action-row {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .top-action-row button {
-    flex: 1;
-    font-weight: bold;
-    font-size: 1rem;
-    padding: 0.6rem;
-    border: none;
-    border-radius: 0.4rem;
-  }
-  .btn-refresh {
-    background-color: var(--btn-refresh-bg) !important;
-    color: var(--btn-refresh-text) !important;
-  }
-  .btn-copy-top {
-    background-color: var(--btn-copy-bg) !important;
-    color: var(--btn-copy-text) !important;
-  }
-
-  /* 第三行：說明 / 樣式 / 框- 框+ / A- A+ */
+  /* 第一行：說明 | 樣式 | 框- 框+ | A- A+ */
   .settings-row {
     display: flex;
     gap: 0.3rem;
@@ -157,17 +136,48 @@
     flex: 1;
     font-size: 0.85rem;
     padding: 0.42rem 0.2rem;
-    background-color: var(--btn-default-bg);
-    color: var(--btn-default-text);
   }
   .settings-divider {
     width: 1px;
     height: 1.4rem;
-    background-color: var(--border);
+    background-color: var(--divider);
     flex-shrink: 0;
   }
 
-  /* ══ 氣泡視窗（共用） ══ */
+  /* 第二行：切換系統鍵盤 */
+  #kbdToggleBtn {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.5rem;
+    background-color: var(--btn-kbd-bg);
+    color: var(--btn-kbd-text);
+    font-weight: bold;
+    border: 1px solid var(--border);
+    border-radius: 0.35rem;
+  }
+  #kbdToggleBtn.kbd-on {
+    background-color: var(--btn-kbd-on-bg);
+    color: var(--btn-kbd-on-text);
+  }
+
+  /* 第三行：貼上 / 清除 / 複製全文 */
+  .action-row {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .action-row button {
+    font-weight: bold;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.3rem;
+    border: none;
+    border-radius: 0.4rem;
+    color: #fff;
+  }
+  .btn-paste  { flex: 1; background-color: var(--btn-paste-bg) !important; color: var(--btn-paste-text) !important; }
+  .btn-clear  { flex: 1; background-color: var(--btn-clear-bg) !important; color: var(--btn-clear-text) !important; }
+  .btn-copy-top { flex: 2; background-color: var(--btn-copy-bg) !important; color: var(--btn-copy-text) !important; }
+
+  /* ══ 氣泡視窗 ══ */
   .bubble-window {
     display: none;
     position: absolute;
@@ -182,21 +192,16 @@
     z-index: 200;
     font-size: 0.86rem;
     color: var(--text);
+    transition: background-color 0.2s;
   }
-  /* 說明氣泡靠右 */
   #info-bubble { left: auto; right: 0; width: 260px; }
-
   .bubble-window ul { margin: 0; padding-left: 1.1rem; }
   .bubble-window li { margin-bottom: 0.4rem; line-height: 1.5; }
   .bubble-window li:last-child { margin-bottom: 0; }
   .bubble-window .warn { color: var(--warn-color); font-weight: bold; }
 
-  /* 樣式選單氣泡 */
-  .theme-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
+  /* 樣式選單 */
+  .theme-list { display: flex; flex-direction: column; gap: 0.4rem; }
   .theme-btn {
     width: 100%;
     text-align: left;
@@ -262,7 +267,6 @@
   }
   textarea:focus { outline: 2px solid var(--focus-outline); }
 
-  /* ══ 控制台標籤 ══ */
   .ctrl-label {
     font-size: 0.75rem;
     color: var(--ctrl-label);
@@ -336,16 +340,8 @@
     padding: 0.5rem;
   }
   .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
-  .numpad-grid button {
-    padding: 0.9rem 0;
-    font-size: 1.45rem;
-    font-weight: bold;
-    background-color: var(--editor-bg);
-  }
-  .numpad-grid .num-action {
-    font-size: 0.9rem;
-    background-color: var(--btn-default-bg);
-  }
+  .numpad-grid button { padding: 0.9rem 0; font-size: 1.45rem; font-weight: bold; background-color: var(--editor-bg); }
+  .numpad-grid .num-action { font-size: 0.9rem; background-color: var(--btn-default-bg); }
 
   /* ══ 草稿區 ══ */
   .draft-section {
@@ -368,19 +364,11 @@
     font-weight: bold;
     color: var(--draft-title);
     flex-shrink: 0;
-    min-width: 3.2rem;
+    min-width: 4.5rem;
   }
-  .draft-btn-group {
-    display: flex;
-    gap: 0.3rem;
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-  .draft-btn-group button {
-    font-size: 0.82rem;
-    padding: 0.35rem 0.6rem;
-    background-color: var(--btn-draft-bg);
-  }
+  .draft-row-title.autosave { color: var(--autosave-title); }
+  .draft-btn-group { display: flex; gap: 0.3rem; flex-shrink: 0; margin-left: auto; }
+  .draft-btn-group button { font-size: 0.82rem; padding: 0.35rem 0.6rem; background-color: var(--btn-draft-bg); }
   .btn-draft-del {
     background-color: var(--btn-draft-del-bg) !important;
     color: var(--btn-draft-del-text) !important;
@@ -399,25 +387,12 @@
 </head>
 <body>
 
-<!-- ══ 頂部固定區 ══ -->
 <header class="sticky-header" role="banner">
 
-  <!-- 第一行：切換系統鍵盤 -->
-  <button id="kbdToggleBtn" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">
-    切換系統鍵盤（目前：關閉）
-  </button>
-
-  <!-- 第二行：重新整理 + 複製全文 -->
-  <div class="top-action-row">
-    <button class="btn-refresh" onclick="resetEditor()" aria-label="重新整理">重新整理</button>
-    <button class="btn-copy-top" onclick="copyAll()" aria-label="複製全文">複製全文</button>
-  </div>
-
-  <!-- 第三行：說明 | 樣式 | 框- 框+ | A- A+ -->
+  <!-- 第一行：說明 | 樣式 | 框- 框+ | A- A+ -->
   <div class="settings-row" id="settings-row">
 
-    <!-- 說明 -->
-    <button class="btn-info-sm" onclick="toggleInfoBubble()" aria-label="說明">說明</button>
+    <button onclick="toggleInfoBubble()" aria-label="說明">說明</button>
     <div id="info-bubble" class="bubble-window" role="tooltip">
       <ul>
         <li>草稿儲存於本機裝置瀏覽器暫存，無雲端同步備份功能。</li>
@@ -428,34 +403,42 @@
 
     <div class="settings-divider"></div>
 
-    <!-- 樣式 -->
     <button onclick="toggleThemeBubble()" aria-label="切換樣式">樣式</button>
-    <div id="theme-bubble" class="bubble-window" style="left:0; right:auto; width:180px;">
+    <div id="theme-bubble" class="bubble-window" style="left:2.5rem; right:auto; width:180px;">
       <div class="theme-list">
-        <button class="theme-btn active" id="theme-light" onclick="setTheme('light')" aria-label="亮色主題">亮色（預設）</button>
-        <button class="theme-btn" id="theme-dark" onclick="setTheme('dark')" aria-label="深色主題">深色</button>
+        <button class="theme-btn active" id="theme-light" onclick="setTheme('light')">亮色（預設）</button>
+        <button class="theme-btn" id="theme-dark" onclick="setTheme('dark')">深色</button>
       </div>
     </div>
 
     <div class="settings-divider"></div>
 
-    <!-- 框- 框+ -->
     <button onclick="changeEditorSize(-3)" aria-label="縮短輸入框">框-</button>
     <button onclick="changeEditorSize(3)" aria-label="加長輸入框">框+</button>
 
     <div class="settings-divider"></div>
 
-    <!-- A- A+ -->
     <button onclick="changeFontSize(-2)" aria-label="縮小字體">A-</button>
     <button onclick="changeFontSize(2)" aria-label="放大字體">A+</button>
 
   </div>
+
+  <!-- 第二行：切換系統鍵盤 -->
+  <button id="kbdToggleBtn" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">
+    切換系統鍵盤（目前：關閉）
+  </button>
+
+  <!-- 第三行：貼上 / 清除 / 複製全文 -->
+  <div class="action-row">
+    <button class="btn-paste" onclick="pasteText()" aria-label="貼上">貼上</button>
+    <button class="btn-clear" onclick="clearEditor()" aria-label="清除">清除</button>
+    <button class="btn-copy-top" onclick="copyAll()" aria-label="複製全文">複製全文</button>
+  </div>
+
 </header>
 
-<!-- ══ 滾動區 ══ -->
 <main class="scroll-area" role="main">
 
-  <!-- 主編輯區 -->
   <div class="editor-container">
     <textarea
       id="editor"
@@ -468,11 +451,16 @@
 
   <!-- 方向鍵 -->
   <div>
-        <div class="toolbar-move" role="group" aria-label="游標移動">
-      <button onclick="moveCursor('up')" aria-label="向上">上</button>
-      <button onclick="moveCursor('down')" aria-label="向下">下</button>
-      <button onclick="moveCursor('left')" aria-label="向左">左</button>
-      <button onclick="moveCursor('right')" aria-label="向右">右</button>
+    <div class="ctrl-label">方向</div>
+    <div class="toolbar-move" role="group" aria-label="游標移動">
+      <button aria-label="向上"
+        onpointerdown="startMove('up')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">上</button>
+      <button aria-label="向下"
+        onpointerdown="startMove('down')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">下</button>
+      <button aria-label="向左"
+        onpointerdown="startMove('left')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">左</button>
+      <button aria-label="向右"
+        onpointerdown="startMove('right')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">右</button>
     </div>
   </div>
 
@@ -481,10 +469,8 @@
     <button class="btn-undo" id="undoBtn" onclick="undo()" disabled aria-label="復原">復原</button>
     <button class="btn-redo" id="redoBtn" onclick="redo()" disabled aria-label="取消復原">取消復原</button>
     <button class="btn-del" id="deleteBtn" aria-label="刪除字元"
-      onpointerdown="startDelete()"
-      onpointerup="stopDelete()"
-      onpointerleave="stopDelete()"
-      onpointercancel="stopDelete()">刪除</button>
+      onpointerdown="startDelete()" onpointerup="stopDelete()"
+      onpointerleave="stopDelete()" onpointercancel="stopDelete()">刪除</button>
   </div>
 
   <!-- 插入工具 -->
@@ -494,16 +480,16 @@
     <button id="symbolToggleBtn" onclick="toggleSymbol()" aria-label="插入符號">插入符號</button>
   </div>
 
-  <!-- 符號面板 -->
+  <!-- 符號面板（移除、。，新增〈〉） -->
   <div id="symbol-panel" class="symbol-panel" aria-label="符號選單">
     <div class="sym-row">
       <button onclick="insertText('「')">「</button>
       <button onclick="insertText('」')">」</button>
       <button onclick="insertText('《')">《</button>
       <button onclick="insertText('》')">》</button>
+      <button onclick="insertText('〈')">〈</button>
+      <button onclick="insertText('〉')">〉</button>
       <button onclick="insertText('→')">→</button>
-      <button onclick="insertText('、')">、</button>
-      <button onclick="insertText('。')">。</button>
       <button onclick="toggleSymbol()" style="font-size:0.85rem">收起</button>
     </div>
   </div>
@@ -529,6 +515,18 @@
   <!-- 草稿管理 -->
   <div class="draft-section" role="group" aria-label="草稿管理">
     <div class="ctrl-label">草稿管理</div>
+
+    <!-- 自動儲存欄位 -->
+    <div class="draft-item">
+      <div class="draft-row">
+        <span class="draft-row-title autosave">自動儲存</span>
+        <div class="draft-btn-group">
+          <button onclick="loadAutoSave()" aria-label="讀取自動儲存">讀取</button>
+          <button class="btn-draft-del" onclick="clearAutoSave()" aria-label="刪除自動儲存">刪除</button>
+        </div>
+      </div>
+      <div id="preview-auto" class="draft-preview" aria-live="polite">尚無自動存檔</div>
+    </div>
 
     <div class="draft-item">
       <div class="draft-row">
@@ -572,47 +570,44 @@
 <script>
   const editor = document.getElementById('editor');
   let currentFontSize = 16;
-  let currentEditorRem = 13;  // 輸入框預設高度 rem
-  const EDITOR_MIN = 6;
-  const EDITOR_MAX = 40;
+  let currentEditorRem = 13;
+  const EDITOR_MIN = 6, EDITOR_MAX = 40;
   let historyStack = [''];
   let redoStack = [];
   let kbdEnabled = false;
   let currentTheme = 'light';
-  const MAX_HISTORY = 50;
+  const MAX_HISTORY = 30;
   const PREVIEW_LEN = 16;
+  const AUTO_SAVE_KEY = 'draft_auto';
+  const AUTO_SAVE_INTERVAL = 5 * 60 * 1000; // 5 分鐘
 
   window.onload = () => {
     updatePreview(1); updatePreview(2); updatePreview(3);
+    updateAutoSavePreview();
     updateHistoryButtons();
-    // 讀取儲存的主題
     const savedTheme = localStorage.getItem('editor_theme');
     if (savedTheme) setTheme(savedTheme, true);
+    // 啟動自動儲存
+    setInterval(autoSave, AUTO_SAVE_INTERVAL);
   };
 
   /* ══ 氣泡管理 ══ */
   const allBubbles = ['info-bubble', 'theme-bubble'];
-
   function closeAllBubbles() {
-    allBubbles.forEach(id => {
-      document.getElementById(id).style.display = 'none';
-    });
+    allBubbles.forEach(id => document.getElementById(id).style.display = 'none');
   }
-
   function toggleInfoBubble() {
     const b = document.getElementById('info-bubble');
     const isOpen = b.style.display === 'block';
     closeAllBubbles();
     if (!isOpen) b.style.display = 'block';
   }
-
   function toggleThemeBubble() {
     const b = document.getElementById('theme-bubble');
     const isOpen = b.style.display === 'block';
     closeAllBubbles();
     if (!isOpen) b.style.display = 'block';
   }
-
   document.addEventListener('click', e => {
     if (!e.target.closest('.settings-row')) closeAllBubbles();
   });
@@ -623,10 +618,7 @@
     document.body.classList.toggle('dark', theme === 'dark');
     document.getElementById('theme-light').classList.toggle('active', theme === 'light');
     document.getElementById('theme-dark').classList.toggle('active', theme === 'dark');
-    if (!silent) {
-      localStorage.setItem('editor_theme', theme);
-      closeAllBubbles();
-    }
+    if (!silent) { localStorage.setItem('editor_theme', theme); closeAllBubbles(); }
   }
 
   /* ══ 字體縮放 ══ */
@@ -635,13 +627,13 @@
     document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
   }
 
-  /* ══ 輸入框高度調整 ══ */
+  /* ══ 輸入框高度 ══ */
   function changeEditorSize(d) {
     currentEditorRem = Math.min(Math.max(currentEditorRem + d, EDITOR_MIN), EDITOR_MAX);
     editor.style.minHeight = currentEditorRem + 'rem';
   }
 
-  /* ══ 切換系統鍵盤 ══ */
+  /* ══ 切換系統鍵盤（修正：focus 延遲） ══ */
   function toggleKeyboard() {
     kbdEnabled = !kbdEnabled;
     const btn = document.getElementById('kbdToggleBtn');
@@ -654,30 +646,24 @@
       btn.textContent = '切換系統鍵盤（目前：關閉）';
       btn.classList.remove('kbd-on');
     }
-    editor.focus();
+    setTimeout(() => editor.focus(), 50); // 修正：延遲 focus 避免事件衝突
   }
 
-  /* ══ 重新整理 ══ */
-  function resetEditor() {
-    if (editor.value.trim() === '' && historyStack.length <= 1) return;
-    if (!confirm('確定重新整理？將清除輸入區內容與復原紀錄，草稿不受影響。')) return;
+  /* ══ 清除編輯區 ══ */
+  function clearEditor() {
+    if (editor.value.trim() === '') return;
+    if (!confirm('確定要清除輸入區的全部內容嗎？')) return;
     editor.value = '';
-    historyStack = [''];
-    redoStack = [];
-    updateHistoryButtons();
-    kbdEnabled = false;
-    editor.setAttribute('inputmode', 'none');
-    document.getElementById('kbdToggleBtn').textContent = '切換系統鍵盤（目前：關閉）';
-    document.getElementById('kbdToggleBtn').classList.remove('kbd-on');
-    editor.focus();
+    saveHistory();
+    setTimeout(() => editor.focus(), 50);
   }
 
-  /* ══ 歷史紀錄 ══ */
+  /* ══ 歷史紀錄（上限 10 次） ══ */
   function onEditorInput() {
     const cur = editor.value;
     if (cur === historyStack[historyStack.length - 1]) return;
     historyStack.push(cur);
-    if (historyStack.length > MAX_HISTORY) historyStack.shift();
+    if (historyStack.length > MAX_HISTORY + 1) historyStack.shift();
     redoStack = [];
     updateHistoryButtons();
   }
@@ -726,8 +712,7 @@
     }, 300);
   }
   function stopDelete() {
-    clearTimeout(deleteHoldTimer);
-    clearInterval(deleteRepeatTimer);
+    clearTimeout(deleteHoldTimer); clearInterval(deleteRepeatTimer);
     deleteHoldTimer = null; deleteRepeatTimer = null;
   }
 
@@ -758,13 +743,28 @@
       if (direction === 'up' && lineIdx > 0) {
         let newAcc = 0;
         for (let j = 0; j < lineIdx - 1; j++) newAcc += lines[j].length + 1;
-        editor.setSelectionRange(newAcc + Math.min(colIdx, lines[lineIdx-1].length), newAcc + Math.min(colIdx, lines[lineIdx-1].length));
+        const np = newAcc + Math.min(colIdx, lines[lineIdx-1].length);
+        editor.setSelectionRange(np, np);
       } else if (direction === 'down' && lineIdx < lines.length - 1) {
         let newAcc = 0;
         for (let j = 0; j <= lineIdx; j++) newAcc += lines[j].length + 1;
-        editor.setSelectionRange(newAcc + Math.min(colIdx, lines[lineIdx+1].length), newAcc + Math.min(colIdx, lines[lineIdx+1].length));
+        const np = newAcc + Math.min(colIdx, lines[lineIdx+1].length);
+        editor.setSelectionRange(np, np);
       }
     }
+  }
+
+  /* ══ 長按連續移動 ══ */
+  let moveHoldTimer = null, moveRepeatTimer = null;
+  function startMove(dir) {
+    moveCursor(dir);
+    moveHoldTimer = setTimeout(() => {
+      moveRepeatTimer = setInterval(() => moveCursor(dir), 80);
+    }, 300);
+  }
+  function stopMove() {
+    clearTimeout(moveHoldTimer); clearInterval(moveRepeatTimer);
+    moveHoldTimer = null; moveRepeatTimer = null;
   }
 
   /* ══ 插入日期 ══ */
@@ -791,6 +791,16 @@
     editor.focus();
   }
 
+  /* ══ 貼上（貼到游標位置） ══ */
+  function pasteText() {
+    navigator.clipboard.readText()
+      .then(text => {
+        if (!text) return;
+        insertText(text);
+      })
+      .catch(() => alert('無法存取剪貼簿，請確認已授予權限，或手動長按貼上。'));
+  }
+
   /* ══ 複製全文 ══ */
   function copyAll() {
     if (!editor.value) { alert('目前沒有內容可複製。'); return; }
@@ -799,11 +809,49 @@
       .catch(() => { editor.select(); editor.setSelectionRange(0, 99999); alert('請手動長按全選後複製。'); });
   }
 
-  /* ══ 草稿 ══ */
+  /* ══ 時間戳 ══ */
   function getTimestamp() {
     const d = new Date();
     return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
+
+  /* ══ 預覽文字 ══ */
+  function makePreview(text) {
+    const clean = text.replace(/\n/g, ' ');
+    return clean.substring(0, PREVIEW_LEN) + (clean.length > PREVIEW_LEN ? '……' : '');
+  }
+
+  /* ══ 自動儲存 ══ */
+  function autoSave() {
+    if (editor.value.trim() === '') return;
+    localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify({ time: getTimestamp(), text: editor.value }));
+    updateAutoSavePreview();
+  }
+  function updateAutoSavePreview() {
+    const raw = localStorage.getItem(AUTO_SAVE_KEY);
+    const el = document.getElementById('preview-auto');
+    if (!raw) { el.textContent = '尚無自動存檔'; return; }
+    try {
+      const data = JSON.parse(raw);
+      el.textContent = `${data.time}　${makePreview(data.text)}`;
+    } catch(e) { el.textContent = '尚無自動存檔'; }
+  }
+  function loadAutoSave() {
+    const raw = localStorage.getItem(AUTO_SAVE_KEY);
+    if (!raw) { alert('尚無自動存檔紀錄。'); return; }
+    if (editor.value.trim() !== '' && !confirm('讀取將覆蓋現有文字，確定嗎？')) return;
+    editor.value = JSON.parse(raw).text;
+    saveHistory(); editor.focus();
+  }
+  function clearAutoSave() {
+    if (!localStorage.getItem(AUTO_SAVE_KEY)) return;
+    if (confirm('確定永久刪除自動存檔嗎？')) {
+      localStorage.removeItem(AUTO_SAVE_KEY);
+      updateAutoSavePreview();
+    }
+  }
+
+  /* ══ 草稿 ══ */
   function saveDraft(slot) {
     localStorage.setItem('draft_' + slot, JSON.stringify({ time: getTimestamp(), text: editor.value }));
     updatePreview(slot);
@@ -829,9 +877,7 @@
     if (!raw) { el.textContent = '尚無存檔'; return; }
     try {
       const data = JSON.parse(raw);
-      const clean = data.text.replace(/\n/g, ' ');
-      const preview = clean.substring(0, PREVIEW_LEN) + (clean.length > PREVIEW_LEN ? '……' : '');
-      el.textContent = `${data.time}　${preview}`;
+      el.textContent = `${data.time}　${makePreview(data.text)}`;
     } catch(e) { el.textContent = '尚無存檔'; }
   }
 </script>
