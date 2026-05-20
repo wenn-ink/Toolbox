@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readmoo 折價券排版工具 v2.1</title>
+    <title>Readmoo 折價券排版工具 v2.1.1</title>
     <style>
         :root {
             --text: #23140b;
@@ -155,7 +155,7 @@
 
 <div class="container">
     <header>
-        <h2 style="margin:0">Readmoo 折價券排版工具 v2.1</h2>
+        <h2 style="margin:0">Readmoo 折價券排版工具 v2.1.1</h2>
         <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
     </header>
 
@@ -268,12 +268,11 @@
 
         let desc = "優惠券";
         
-        // V2.1 新增：擴充正則判斷庫，支援有聲書、活動名稱與空格變化
         const patterns = [
-            /有聲書滿\s*\d+\s*元折\s*\d+\s*元/g,  // 判斷有聲書滿額折
+            /有聲書滿\s*\d+\s*元折\s*\d+\s*元/g,
             /\d+\s*本\s*\d+\s*折/g,
-            /滿\s*\d+\s*元折\s*\d+\s*元/g,      // 判斷普通滿額折
-            /不限金額\s*\d+\s*折/g,             // 判斷不限金額折數
+            /滿\s*\d+\s*元折\s*\d+\s*元/g,
+            /不限金額\s*\d+\s*折/g,
             /不限金額折\s*\d+\s*元/g,
             /\d+\s*折/g
         ];
@@ -286,7 +285,6 @@
             }
         }
         
-        // V2.1 邏輯：精準取用「不限金額 8 折」，並自動縮減為「8 折」
         if (desc.includes("不限金額") && desc.includes("折") && !desc.includes("元")) {
             const match = desc.match(/\d+\s*折/);
             if (match) {
@@ -328,7 +326,8 @@
         if (mode === 'single') {
             const closingSingle = "\n序號下收，希望使用後能回報。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
             const d = items[0];
-            intro = `分享 Readmoo 讀墨電子書${d.desc}折價券，${d.date}到期。${closingSingle}`;
+            // v2.1.1 修正：在讀墨電子書與折價券的前後加入指定空格
+            intro = `分享 Readmoo 讀墨電子書 ${d.desc} 折價券，${d.date}到期。${closingSingle}`;
             detail = `${d.id}\n${d.desc}，${d.date}到期。`;
         } else {
             const closingMulti = "\n序號下收，希望使用後能回報識別號碼。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
@@ -337,7 +336,8 @@
             const range = firstD === lastD ? `${firstD}到期` : `${firstD}～${lastD}到期`;
             
             const uniqueDescs = [...new Set(items.map(x => x.desc))].join('、');
-            intro = `分享多張 Readmoo 讀墨電子書折價券：\n${range}，\n有${uniqueDescs}；${closingMulti}`;
+            // v2.1.1 修正：在「有」的後面加上空格
+            intro = `分享多張 Readmoo 讀墨電子書折價券：\n${range}，\n有 ${uniqueDescs}；${closingMulti}`;
             detail = items.map((x, i) => `${chineseNums[i]}、${x.desc}，${x.date}到期：\n${x.id}`).join('\n\n');
         }
 
@@ -368,7 +368,6 @@
         navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => alert("已複製！"));
     }
 
-    // 複製全文順序已配合 UI 一併調整
     function copyAll() {
         const intro = document.getElementById('outIntro').innerText;
         const apText = document.getElementById('outAp').innerText.trim();
@@ -376,7 +375,6 @@
         
         let textArr = [intro];
         
-        // 確保 AP 在主文與序號之間
         if (apText !== "") {
             textArr.push(apText);
         }
