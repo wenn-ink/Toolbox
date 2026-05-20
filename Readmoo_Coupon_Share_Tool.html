@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readmoo 折價券排版工具 v2.0.1</title>
+    <title>Readmoo 折價券排版工具 v2.1</title>
     <style>
         :root {
             --text: #23140b;
@@ -155,7 +155,7 @@
 
 <div class="container">
     <header>
-        <h2 style="margin:0">Readmoo 排版工具 v2.0.1</h2>
+        <h2 style="margin:0">Readmoo 折價券排版工具 v2.1</h2>
         <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
     </header>
 
@@ -190,18 +190,18 @@
             <button class="copy-btn" onclick="copy('outIntro')">複製本段文字</button>
         </div>
 
-        <label>2. 折價券欄</label>
-        <div class="copy-card">
-            <pre id="outDetails"></pre>
-            <button class="copy-btn" onclick="copy('outDetails')">複製本段文字</button>
-        </div>
-
         <div id="wrapAp">
-            <label id="apLabel">3. AP 推薦連結</label>
+            <label id="apLabel">2. AP 推薦連結</label>
             <div class="copy-card">
                 <pre id="outAp"></pre>
                 <button class="copy-btn" onclick="copy('outAp')">複製本段文字</button>
             </div>
+        </div>
+
+        <label>3. 折價券欄</label>
+        <div class="copy-card">
+            <pre id="outDetails"></pre>
+            <button class="copy-btn" onclick="copy('outDetails')">複製本段文字</button>
         </div>
 
         <button class="btn-main" style="margin-top: 20px; background: var(--accent);" onclick="copyAll()">複製全文</button>
@@ -216,7 +216,6 @@
         const theme = localStorage.getItem('rm_theme') || 'light';
         document.body.setAttribute('data-theme', theme);
         
-        // 讀取紀錄的 AP 與設定
         const ap = localStorage.getItem('rm_ap');
         document.getElementById('apUrl').value = (ap !== null) ? ap : 'https://moo.im/a/3hjDET';
         
@@ -252,7 +251,6 @@
         }
     }
 
-    // 儲存網址與 AP 模式的選擇
     function saveSettings() {
         localStorage.setItem('rm_ap', document.getElementById('apUrl').value);
         const selectedMode = document.querySelector('input[name="apMode"]:checked').value;
@@ -269,11 +267,33 @@
         const finalDate = dates.sort().reverse()[0];
 
         let desc = "優惠券";
-        const patterns = [/\d+本\d+折/g, /滿\d+元折\d+元/g, /不限金額折\d+元/g, /\d+折/g];
+        
+        // V2.1 新增：擴充正則判斷庫，支援有聲書、活動名稱與空格變化
+        const patterns = [
+            /有聲書滿\s*\d+\s*元折\s*\d+\s*元/g,  // 判斷有聲書滿額折
+            /\d+\s*本\s*\d+\s*折/g,
+            /滿\s*\d+\s*元折\s*\d+\s*元/g,      // 判斷普通滿額折
+            /不限金額\s*\d+\s*折/g,             // 判斷不限金額折數
+            /不限金額折\s*\d+\s*元/g,
+            /\d+\s*折/g
+        ];
+        
         for (let p of patterns) {
             const m = text.match(p);
-            if (m) { desc = m[0]; break; }
+            if (m) { 
+                desc = m[0]; 
+                break; 
+            }
         }
+        
+        // V2.1 邏輯：精準取用「不限金額 8 折」，並自動縮減為「8 折」
+        if (desc.includes("不限金額") && desc.includes("折") && !desc.includes("元")) {
+            const match = desc.match(/\d+\s*折/);
+            if (match) {
+                desc = match[0]; 
+            }
+        }
+
         if (desc === "優惠券" && text.includes('～')) {
             desc = text.split('～')[1].split(' ')[0].replace('優惠券', '');
         }
@@ -324,17 +344,16 @@
         document.getElementById('outIntro').innerText = intro;
         document.getElementById('outDetails').innerText = detail;
 
-        // V2.0.1 修正：AP 產生邏輯
         const ap = document.getElementById('apUrl').value.trim();
         const apMode = document.querySelector('input[name="apMode"]:checked').value;
 
         if (ap !== "") {
             document.getElementById('wrapAp').classList.remove('hidden');
             if (apMode === 'simple') {
-                document.getElementById('apLabel').innerText = "3. AP 簡單版";
+                document.getElementById('apLabel').innerText = "2. AP 簡單版";
                 document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n${ap}`;
             } else {
-                document.getElementById('apLabel').innerText = "3. AP 含操作版";
+                document.getElementById('apLabel').innerText = "2. AP 含操作版";
                 document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n\n1.檢查購物車內是否已有商品，若有，麻煩先刪除。  \n2.點選 AP 連結：${ap}\n3.重新「搜尋商品並加入購物車」。  \n4.使用折價券。\n5.確認折抵後，結帳。`;
             }
         } else {
@@ -349,16 +368,20 @@
         navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => alert("已複製！"));
     }
 
-    // V2.0.1 修正：動態取得當前出現的區塊文字並複製
+    // 複製全文順序已配合 UI 一併調整
     function copyAll() {
         const intro = document.getElementById('outIntro').innerText;
-        const details = document.getElementById('outDetails').innerText;
         const apText = document.getElementById('outAp').innerText.trim();
+        const details = document.getElementById('outDetails').innerText;
         
-        let textArr = [intro, details];
+        let textArr = [intro];
+        
+        // 確保 AP 在主文與序號之間
         if (apText !== "") {
             textArr.push(apText);
         }
+        
+        textArr.push(details);
         
         navigator.clipboard.writeText(textArr.join('\n\n')).then(() => alert("已複製全文！"));
     }
