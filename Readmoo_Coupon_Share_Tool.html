@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readmoo 折價券排版工具 v2.1.2</title>
+    <title>Readmoo 折價券排版工具 v2.2.0</title>
     <style>
         :root {
             --text: #23140b;
@@ -149,13 +149,20 @@
         .error-msg { color: var(--primary); font-size: 0.9rem; margin-top: -10px; margin-bottom: 10px; display: block; }
         .hidden { display: none !important; }
         label { font-weight: bold; display: block; margin-bottom: 5px; }
+        
+        .footer-note {
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            text-align: center;
+        }
     </style>
 </head>
 <body data-theme="light">
 
 <div class="container">
     <header>
-        <h2 style="margin:0">Readmoo 折價券排版工具 v2.1.2</h2>
+        <h2 style="margin:0">Readmoo 折價券排版工具 v2.2.0</h2>
         <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
     </header>
 
@@ -205,6 +212,10 @@
         </div>
 
         <button class="btn-main" style="margin-top: 20px; background: var(--accent);" onclick="copyAll()">複製全文</button>
+    </div>
+
+    <div class="footer-note">
+        [視覺提醒] 弱視及雙眼友善配色。若背景過亮，請檢查硬體暖光模式。
     </div>
 </div>
 
@@ -262,36 +273,56 @@
         const idMatch = text.match(/[A-Z0-9]+-[A-Z0-9]+/);
         if (!idMatch) return "無法辨識序號";
         
-        const dates = text.match(/\d{4}\/\d{2}\/\d{2}/g);
-        if (!dates) return "無法辨識日期";
-        const finalDate = dates.sort().reverse()[0];
-
-        let desc = "優惠券";
+        // 1. 日期優化判斷邏輯 (包含時分秒校正)
+        let finalDate = "";
+        const dateTimeMatch = text.match(/(\d{4}\/\d{2}\/\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+        const datesOnly = text.match(/\d{4}\/\d{2}\/\d{2}/g);
         
+        if (dateTimeMatch) {
+            const datePart = dateTimeMatch[1];
+            const timePart = `${dateTimeMatch[2]}:${dateTimeMatch[3]}:${dateTimeMatch[4]}`;
+            
+            if (timePart === "00:00:00") {
+                // 00:00:00 往前推一天
+                const d = new Date(datePart);
+                d.setDate(d.getDate() - 1);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                finalDate = `${yyyy}/${mm}/${dd}`;
+            } else if (timePart === "23:59:59") {
+                // 23:59:59 維持當天
+                finalDate = datePart;
+            } else {
+                // 其他奇怪的時分秒，完整呈現
+                finalDate = `${datePart} ${timePart}`;
+            }
+        } else if (datesOnly) {
+            // 如果只有日期沒有時間，採原本行為
+            finalDate = datesOnly.sort().reverse()[0];
+        } else {
+            return "無法辨識日期";
+        }
+
+        // 2. 優惠折扣比對邏輯 (修正：保留「不限金額」特徵)
+        let desc = "優惠券";
         const patterns = [
             /有聲書滿\s*\d+\s*元折\s*\d+\s*元/g,
-            /\d+\s*本\s*\d+\s*折/g,
-            /滿\s*\d+\s*元折\s*\d+\s*元/g,
             /不限金額\s*\d+\s*折/g,
             /不限金額折\s*\d+\s*元/g,
+            /\d+\s*本\s*\d+\s*折/g,
+            /滿\s*\d+\s*元折\s*\d+\s*元/g,
             /\d+\s*折/g
         ];
         
         for (let p of patterns) {
             const m = text.match(p);
             if (m) { 
-                desc = m[0]; 
+                desc = m[0].replace(/\s+/g, ''); // 移除多餘空白
                 break; 
             }
         }
         
-        if (desc.includes("不限金額") && desc.includes("折") && !desc.includes("元")) {
-            const match = desc.match(/\d+\s*折/);
-            if (match) {
-                desc = match[0]; 
-            }
-        }
-
         if (desc === "優惠券" && text.includes('～')) {
             desc = text.split('～')[1].split(' ')[0].replace('優惠券', '');
         }
@@ -319,7 +350,8 @@
         if (empty) { alert("還沒輸入折價券喔"); return; }
         if (items.length === 0) return;
 
-        items.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // 排序時若有帶時分秒，New Date 依然可正常解析排序
+        items.sort((a, b) => new Date(a.date.split(' ')[0]) - new Date(b.date.split(' ')[0]));
 
         let intro = "", detail = "";
 
@@ -337,7 +369,7 @@
             const uniqueDescsArr = [...new Set(items.map(x => x.desc))];
             const uniqueDescs = uniqueDescsArr.join('、');
             
-            // v2.1.2 修正：若所有輸入的折價券欄位經去重後只有一種折數描述，則省略「有 」，改為「 8 折；」
+            // v2.1.2 承襲邏輯：若所有去重後僅剩一種折扣，則省略「有 」，否則保留「有 」
             let descSegment = "";
             if (uniqueDescsArr.length === 1) {
                 descSegment = ` ${uniqueDescs}`;
@@ -362,7 +394,7 @@
                 document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n${ap}`;
             } else {
                 document.getElementById('apLabel').innerText = "2. AP 含操作版";
-                document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n\n1.檢查購物車內是否已有商品，若有，麻煩先刪除。  \n2.點選 AP 連結：${ap}\n3.重新「搜尋商品並加入購物車」。  \n4.使用折價券。\n5.確認折抵後，結帳.`;
+                document.getElementById('outAp').innerText = `若願意使用我的 AP 的話，會很感謝：\n\n1.檢查購物車內是否已有商品，若有，麻煩先刪除。  \n2.點選 AP 連結：${ap}\n3.重新「搜尋商品並加入購物車」。  \n4.使用折價券。\n5.確認折抵後，結帳。`;
             }
         } else {
             document.getElementById('wrapAp').classList.add('hidden');
