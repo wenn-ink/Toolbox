@@ -356,12 +356,12 @@
         let intro = "", detail = "";
 
         if (mode === 'single') {
-            const closingSingle = "\n序號下收，希望使用後能回報。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
+            const closingSingle = "\n序號下收，希望使用後能回報。\n\n本噗預定於票券用畢或到期後刪除，預祝閱讀愉快 :)";
             const d = items[0];
             intro = `分享 Readmoo 讀墨電子書 ${d.desc} 折價券，${d.date}到期。${closingSingle}`;
             detail = `${d.id}\n${d.desc}，${d.date}到期。`;
         } else {
-            const closingMulti = "\n序號下收，希望使用後能回報識別號碼。\n\n本噗可能於票券用畢或到期後刪除，預祝閱讀愉快 :)";
+            const closingMulti = "\n序號下收，希望使用後能回報識別號碼。\n\n本噗預定於票券用畢或到期後刪除，預祝閱讀愉快 :)";
             const firstD = items[0].date;
             const lastD = items[items.length - 1].date;
             const range = firstD === lastD ? `${firstD}到期` : `${firstD}～${lastD}到期`;
