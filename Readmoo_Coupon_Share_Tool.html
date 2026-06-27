@@ -14,7 +14,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readmoo 折價券排版工具 v2.2.0</title>
+    <title>Readmoo 折價券排版工具 v2.2.1</title>
     <style>
         :root {
             --text: #23140b;
@@ -173,7 +173,7 @@
 
 <div class="container">
     <header>
-        <h2 style="margin:0">Readmoo 折價券排版工具 v2.2.0</h2>
+        <h2 style="margin:0">Readmoo 折價券排版工具 v2.2.1</h2>
         <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
     </header>
 
@@ -284,38 +284,46 @@
         const idMatch = text.match(/[A-Z0-9]+-[A-Z0-9]+/);
         if (!idMatch) return "無法辨識序號";
         
-        // 1. 日期優化判斷邏輯 (包含時分秒校正)
-        let finalDate = "";
-        const dateTimeMatch = text.match(/(\d{4}\/\d{2}\/\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
-        const datesOnly = text.match(/\d{4}\/\d{2}\/\d{2}/g);
+        // 1. 抓取所有日期與伴隨的時間，並放入陣列中
+        const dateRegex = /(\d{4}\/\d{2}\/\d{2})(?:\s*(\d{2}):(\d{2}):(\d{2}))?/g;
+        const matchedDates = [];
+        let match;
+        while ((match = dateRegex.exec(text)) !== null) {
+            matchedDates.push({
+                date: match[1],
+                time: match[2] ? `${match[2]}:${match[3]}:${match[4]}` : null
+            });
+        }
         
-        if (dateTimeMatch) {
-            const datePart = dateTimeMatch[1];
-            const timePart = `${dateTimeMatch[2]}:${dateTimeMatch[3]}:${dateTimeMatch[4]}`;
-            
-            if (timePart === "00:00:00") {
+        if (matchedDates.length === 0) return "無法辨識日期";
+
+        // 2. 將找到的所有日期排序，挑出「最晚的」一個（即為到期日）
+        matchedDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const expiration = matchedDates[matchedDates.length - 1];
+
+        // 3. 僅針對到期日進行時間判斷與校正
+        let finalDate = "";
+        if (expiration.time) {
+            if (expiration.time === "00:00:00") {
                 // 00:00:00 往前推一天
-                const d = new Date(datePart);
+                const d = new Date(expiration.date);
                 d.setDate(d.getDate() - 1);
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
                 finalDate = `${yyyy}/${mm}/${dd}`;
-            } else if (timePart === "23:59:59") {
+            } else if (expiration.time === "23:59:59") {
                 // 23:59:59 維持當天
-                finalDate = datePart;
+                finalDate = expiration.date;
             } else {
                 // 其他奇怪的時分秒，完整呈現
-                finalDate = `${datePart} ${timePart}`;
+                finalDate = `${expiration.date} ${expiration.time}`;
             }
-        } else if (datesOnly) {
-            // 如果只有日期沒有時間，採原本行為
-            finalDate = datesOnly.sort().reverse()[0];
         } else {
-            return "無法辨識日期";
+            finalDate = expiration.date;
         }
 
-        // 2. 優惠折扣比對邏輯 (修正：保留「不限金額」特徵)
+        // 4. 優惠折扣比對邏輯 (保留「不限金額」特徵)
         let desc = "優惠券";
         const patterns = [
             /有聲書滿\s*\d+\s*元折\s*\d+\s*元/g,
@@ -380,7 +388,6 @@
             const uniqueDescsArr = [...new Set(items.map(x => x.desc))];
             const uniqueDescs = uniqueDescsArr.join('、');
             
-            // v2.1.2 承襲邏輯：若所有去重後僅剩一種折扣，則省略「有 」，否則保留「有 」
             let descSegment = "";
             if (uniqueDescsArr.length === 1) {
                 descSegment = ` ${uniqueDescs}`;
