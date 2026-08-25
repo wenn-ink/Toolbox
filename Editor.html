@@ -144,23 +144,7 @@
     flex-shrink: 0;
   }
 
-  /* 第二行：切換系統鍵盤 */
-  #kbdToggleBtn {
-    width: 100%;
-    font-size: 0.95rem;
-    padding: 0.5rem;
-    background-color: var(--btn-kbd-bg);
-    color: var(--btn-kbd-text);
-    font-weight: bold;
-    border: 1px solid var(--border);
-    border-radius: 0.35rem;
-  }
-  #kbdToggleBtn.kbd-on {
-    background-color: var(--btn-kbd-on-bg);
-    color: var(--btn-kbd-on-text);
-  }
-
-  /* 第三行：貼上 / 清除 / 複製全文 */
+  /* 第二行：貼上 / 清除 / 複製全文 */
   .action-row {
     display: flex;
     gap: 0.4rem;
@@ -176,6 +160,21 @@
   .btn-paste  { flex: 1; background-color: var(--btn-paste-bg) !important; color: var(--btn-paste-text) !important; }
   .btn-clear  { flex: 1; background-color: var(--btn-clear-bg) !important; color: var(--btn-clear-text) !important; }
   .btn-copy-top { flex: 2; background-color: var(--btn-copy-bg) !important; color: var(--btn-copy-text) !important; }
+
+  /* 切換系統鍵盤 button 樣式 */
+  #kbdToggleBtn {
+    font-size: 0.95rem;
+    padding: 0.55rem 0.3rem;
+    background-color: var(--btn-kbd-bg);
+    color: var(--btn-kbd-text);
+    font-weight: bold;
+    border: 1px solid var(--border);
+    border-radius: 0.35rem;
+  }
+  #kbdToggleBtn.kbd-on {
+    background-color: var(--btn-kbd-on-bg);
+    color: var(--btn-kbd-on-text);
+  }
 
   /* ══ 氣泡視窗 ══ */
   .bubble-window {
@@ -274,10 +273,10 @@
     padding-left: 0.1rem;
   }
 
-  /* ══ 方向鍵 ══ */
+  /* ══ 方向鍵與鍵盤切換列 ══ */
   .toolbar-move {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.4rem;
   }
   .toolbar-move button {
@@ -423,12 +422,7 @@
 
   </div>
 
-  <!-- 第二行：切換系統鍵盤 -->
-  <button id="kbdToggleBtn" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">
-    切換系統鍵盤（目前：關閉）
-  </button>
-
-  <!-- 第三行：貼上 / 清除 / 複製全文 -->
+  <!-- 第二行：貼上 / 清除 / 複製全文 -->
   <div class="action-row">
     <button class="btn-paste" onclick="pasteText()" aria-label="貼上">貼上</button>
     <button class="btn-clear" onclick="clearEditor()" aria-label="清除">清除</button>
@@ -443,19 +437,15 @@
     <textarea
       id="editor"
       placeholder="在此輸入內容..."
-      inputmode="none"
       aria-label="主編輯區"
       oninput="onEditorInput()"
     ></textarea>
   </div>
 
-  <!-- 方向鍵 -->
+  <!-- 切換系統鍵盤與游標方向鍵（移至輸入框下方，切換鍵盤位於左側，僅留左、右） -->
   <div>
-       <div class="toolbar-move" role="group" aria-label="游標移動">
-      <button aria-label="向上"
-        onpointerdown="startMove('up')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">上</button>
-      <button aria-label="向下"
-        onpointerdown="startMove('down')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">下</button>
+    <div class="toolbar-move" role="group" aria-label="切換鍵盤與游標移動">
+      <button id="kbdToggleBtn" class="kbd-on" onclick="toggleKeyboard()" aria-label="切換系統鍵盤">關閉鍵盤</button>
       <button aria-label="向左"
         onpointerdown="startMove('left')" onpointerup="stopMove()" onpointerleave="stopMove()" onpointercancel="stopMove()">左</button>
       <button aria-label="向右"
@@ -573,7 +563,7 @@
   const EDITOR_MIN = 6, EDITOR_MAX = 40;
   let historyStack = [''];
   let redoStack = [];
-  let kbdEnabled = false;
+  let kbdEnabled = true; // 預設開啟系統鍵盤
   let currentTheme = 'light';
   const MAX_HISTORY = 30;
   const PREVIEW_LEN = 16;
@@ -632,20 +622,20 @@
     editor.style.minHeight = currentEditorRem + 'rem';
   }
 
-  /* ══ 切換系統鍵盤（修正：focus 延遲） ══ */
+  /* ══ 切換系統鍵盤 ══ */
   function toggleKeyboard() {
     kbdEnabled = !kbdEnabled;
     const btn = document.getElementById('kbdToggleBtn');
     if (kbdEnabled) {
       editor.removeAttribute('inputmode');
-      btn.textContent = '切換系統鍵盤（目前：開啟）';
+      btn.textContent = '關閉鍵盤';
       btn.classList.add('kbd-on');
     } else {
       editor.setAttribute('inputmode', 'none');
-      btn.textContent = '切換系統鍵盤（目前：關閉）';
+      btn.textContent = '開啟鍵盤';
       btn.classList.remove('kbd-on');
     }
-    setTimeout(() => editor.focus(), 50); // 修正：延遲 focus 避免事件衝突
+    setTimeout(() => editor.focus(), 50); // 延遲 focus 避免事件衝突
   }
 
   /* ══ 清除編輯區 ══ */
@@ -732,24 +722,6 @@
       editor.setSelectionRange(start - 1, start - 1);
     } else if (direction === 'right' && start < text.length) {
       editor.setSelectionRange(start + 1, start + 1);
-    } else if (direction === 'up' || direction === 'down') {
-      const lines = text.split('\n');
-      let acc = 0, lineIdx = 0, colIdx = 0;
-      for (let i = 0; i < lines.length; i++) {
-        if (start <= acc + lines[i].length) { lineIdx = i; colIdx = start - acc; break; }
-        acc += lines[i].length + 1;
-      }
-      if (direction === 'up' && lineIdx > 0) {
-        let newAcc = 0;
-        for (let j = 0; j < lineIdx - 1; j++) newAcc += lines[j].length + 1;
-        const np = newAcc + Math.min(colIdx, lines[lineIdx-1].length);
-        editor.setSelectionRange(np, np);
-      } else if (direction === 'down' && lineIdx < lines.length - 1) {
-        let newAcc = 0;
-        for (let j = 0; j <= lineIdx; j++) newAcc += lines[j].length + 1;
-        const np = newAcc + Math.min(colIdx, lines[lineIdx+1].length);
-        editor.setSelectionRange(np, np);
-      }
     }
   }
 
