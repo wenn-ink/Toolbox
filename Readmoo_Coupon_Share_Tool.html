@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TDB29J6REB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-TDB29J6REB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-TDB29J6REB');
-</script>
+      gtag('config', 'G-TDB29J6REB');
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readmoo 折價券排版工具 v2.2.1</title>
+    <title>Readmoo 折價券排版工具 20261021</title>
     <style>
         :root {
             --text: #23140b;
@@ -64,6 +63,10 @@
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
+            transition: var(--transition);
+        }
+        .theme-toggle:hover {
+            opacity: 0.9;
         }
 
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -75,6 +78,9 @@
             color: var(--text);
             cursor: pointer;
             border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: var(--transition);
         }
         .tab-btn.active {
             background: var(--accent);
@@ -87,6 +93,7 @@
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         textarea {
@@ -99,6 +106,7 @@
             background: var(--background);
             color: var(--text);
             margin-bottom: 15px;
+            font-family: inherit;
         }
 
         input[type="text"] {
@@ -109,6 +117,7 @@
             border-radius: 4px;
             background: var(--background);
             color: var(--text);
+            font-family: inherit;
         }
         
         .radio-group {
@@ -135,6 +144,10 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
+            transition: var(--transition);
+        }
+        .btn-main:hover {
+            opacity: 0.92;
         }
 
         .copy-card {
@@ -143,9 +156,10 @@
             padding: 15px;
             border-radius: 4px;
             margin: 15px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .copy-card pre { white-space: pre-wrap; margin: 0; font-size: 0.95rem; }
+        .copy-card pre { white-space: pre-wrap; margin: 0; font-size: 0.95rem; word-break: break-all; }
 
         .copy-btn {
             margin-top: 10px;
@@ -155,11 +169,45 @@
             padding: 6px 15px;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .copy-btn:hover {
+            opacity: 0.9;
         }
 
         .error-msg { color: var(--primary); font-size: 0.9rem; margin-top: -10px; margin-bottom: 10px; display: block; }
         .hidden { display: none !important; }
         label { font-weight: bold; display: block; margin-bottom: 5px; }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(35, 20, 11, 0.92);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            z-index: 9999;
+        }
+        [data-theme="dark"] .toast {
+            background: rgba(244, 229, 220, 0.95);
+            color: #160e09;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
         
         .footer-note {
             margin-top: 30px;
@@ -173,62 +221,92 @@
 
 <div class="container">
     <header>
-        <h2 style="margin:0">Readmoo 折價券排版工具 v2.2.1</h2>
+        <h2 style="margin:0">Readmoo 折價券排版工具 20261021</h2>
         <button class="theme-toggle" onclick="toggleTheme()">切換淺色／深色</button>
     </header>
 
     <div class="tabs">
         <button id="tabSingle" class="tab-btn active" onclick="switchMode('single')">單張模式</button>
         <button id="tabMulti" class="tab-btn" onclick="switchMode('multi')">多張模式</button>
+        <button id="tabAp" class="tab-btn" onclick="switchMode('ap')">AP</button>
     </div>
 
-    <div class="input-group">
-        <div id="inputContainer"></div>
-        <label>AP 推薦網址</label>
-        <input type="text" id="apUrl" oninput="saveSettings()" placeholder="請輸入推薦網址（若留白則不顯示 AP 區塊）">
-        
-        <div class="radio-group">
-            <label>
-                <input type="radio" name="apMode" value="simple" onchange="saveSettings()" checked> 簡單版
-            </label>
-            <label>
-                <input type="radio" name="apMode" value="full" onchange="saveSettings()"> AP操作版
-            </label>
-        </div>
-    </div>
-
-    <button class="btn-main" onclick="generate()">產生排版資料</button>
-
-    <div id="outputArea" class="hidden">
-        <h3 style="margin-top:30px; border-left: 4px solid var(--primary); padding-left: 10px;">排版結果</h3>
-        
-        <label>1. 主旨欄</label>
-        <div class="copy-card">
-            <pre id="outIntro"></pre>
-            <button class="copy-btn" onclick="copy('outIntro')">複製本段文字</button>
-        </div>
-
-        <div id="wrapAp">
-            <label id="apLabel">2. AP 推薦連結</label>
-            <div class="copy-card">
-                <pre id="outAp"></pre>
-                <button class="copy-btn" onclick="copy('outAp')">複製本段文字</button>
+    <!-- 折價券排版專屬區塊 -->
+    <div id="couponSection">
+        <div class="input-group">
+            <div id="inputContainer"></div>
+            <label>AP 推薦網址</label>
+            <input type="text" id="apUrl" oninput="saveSettings()" placeholder="請輸入推薦網址（若留白則不顯示 AP 區塊）">
+            
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="apMode" value="simple" onchange="saveSettings()" checked> 簡單版
+                </label>
+                <label>
+                    <input type="radio" name="apMode" value="full" onchange="saveSettings()"> AP操作版
+                </label>
             </div>
         </div>
 
-        <label>3. 折價券欄</label>
-        <div class="copy-card">
-            <pre id="outDetails"></pre>
-            <button class="copy-btn" onclick="copy('outDetails')">複製本段文字</button>
+        <button class="btn-main" onclick="generate()">產生排版資料</button>
+
+        <div id="outputArea" class="hidden">
+            <h3 style="margin-top:30px; border-left: 4px solid var(--primary); padding-left: 10px;">排版結果</h3>
+            
+            <label>1. 主旨欄</label>
+            <div class="copy-card">
+                <pre id="outIntro"></pre>
+                <button class="copy-btn" onclick="copy('outIntro')">複製本段文字</button>
+            </div>
+
+            <div id="wrapAp">
+                <label id="apLabel">2. AP 推薦連結</label>
+                <div class="copy-card">
+                    <pre id="outAp"></pre>
+                    <button class="copy-btn" onclick="copy('outAp')">複製本段文字</button>
+                </div>
+            </div>
+
+            <label>3. 折價券欄</label>
+            <div class="copy-card">
+                <pre id="outDetails"></pre>
+                <button class="copy-btn" onclick="copy('outDetails')">複製本段文字</button>
+            </div>
+
+            <button class="btn-main" style="margin-top: 20px; background: var(--accent);" onclick="copyAll()">複製全文</button>
+        </div>
+    </div>
+
+    <!-- AP 產生專屬頁籤區塊 -->
+    <div id="apSection" class="hidden">
+        <div class="input-group">
+            <div class="form-field">
+                <label for="apCodeInput">［讀墨AP］</label>
+                <input type="text" id="apCodeInput" placeholder="請填入讀墨AP代號" oninput="handleApConvert()">
+            </div>
+            
+            <div class="form-field" style="margin-bottom:0;">
+                <label for="apOriginalUrlInput">[轉換前網址]</label>
+                <input type="text" id="apOriginalUrlInput" placeholder="請填入要轉換的網址" oninput="handleApConvert()">
+            </div>
         </div>
 
-        <button class="btn-main" style="margin-top: 20px; background: var(--accent);" onclick="copyAll()">複製全文</button>
+        <div id="apOutputCard">
+            <label>［AP網址］</label>
+            <div class="copy-card">
+                <pre id="outApConverted">尚未產生網址，請先輸入讀墨AP代號與欲轉換網址</pre>
+                <button id="copyApBtn" class="copy-btn" onclick="copyApUrl()">一鍵複製 AP 網址</button>
+            </div>
+        </div>
     </div>
 
     <div class="footer-note">
         [視覺提醒] 弱視及雙眼友善配色。若背景過亮，請檢查硬體暖光模式。
     </div>
 </div>
+
+<!-- 吐司訊息元素 -->
+<div id="toast" class="toast"></div>
 
 <script>
     let mode = 'single';
@@ -241,12 +319,27 @@
         const ap = localStorage.getItem('rm_ap');
         document.getElementById('apUrl').value = (ap !== null) ? ap : 'https://moo.im/a/3hjDET';
         
+        const savedApCode = localStorage.getItem('rm_ap_code');
+        if (savedApCode) {
+            document.getElementById('apCodeInput').value = savedApCode;
+        }
+
         const savedApMode = localStorage.getItem('rm_ap_mode') || 'simple';
         const radioTarget = document.querySelector(`input[name="apMode"][value="${savedApMode}"]`);
-        if(radioTarget) radioTarget.checked = true;
+        if (radioTarget) radioTarget.checked = true;
 
         switchMode('single');
     };
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2200);
+    }
 
     function toggleTheme() {
         const current = document.body.getAttribute('data-theme');
@@ -259,6 +352,20 @@
         mode = m;
         document.getElementById('tabSingle').classList.toggle('active', m === 'single');
         document.getElementById('tabMulti').classList.toggle('active', m === 'multi');
+        document.getElementById('tabAp').classList.toggle('active', m === 'ap');
+
+        const couponSection = document.getElementById('couponSection');
+        const apSection = document.getElementById('apSection');
+
+        if (m === 'ap') {
+            couponSection.classList.add('hidden');
+            apSection.classList.remove('hidden');
+            handleApConvert();
+            return;
+        }
+
+        couponSection.classList.remove('hidden');
+        apSection.classList.add('hidden');
         document.getElementById('outputArea').classList.add('hidden');
         
         const container = document.getElementById('inputContainer');
@@ -271,6 +378,51 @@
                 <span id="err${i}" class="error-msg"></span>
             `;
         }
+    }
+
+    function handleApConvert() {
+        const apCode = document.getElementById('apCodeInput').value.trim();
+        const rawUrl = document.getElementById('apOriginalUrlInput').value.trim();
+        const outElem = document.getElementById('outApConverted');
+
+        if (apCode) {
+            localStorage.setItem('rm_ap_code', apCode);
+        }
+
+        if (!rawUrl || !apCode) {
+            outElem.innerText = '請先填入讀墨AP代號與欲轉換網址';
+            return "";
+        }
+
+        let resultUrl = "";
+        try {
+            // 解析 URL 並替換/新增 AP 參數
+            const urlObj = new URL(rawUrl);
+            urlObj.searchParams.set('utm_source', 'AP');
+            urlObj.searchParams.set('utm_medium', 'referral');
+            urlObj.searchParams.set('utm_campaign', apCode);
+            resultUrl = urlObj.toString();
+        } catch (e) {
+            // 若為相對路徑或不標準 URL 字串，以字串規則串接
+            const separator = rawUrl.includes('?') ? '&' : '?';
+            resultUrl = `${rawUrl}${separator}utm_source=AP&utm_medium=referral&utm_campaign=${encodeURIComponent(apCode)}`;
+        }
+
+        outElem.innerText = resultUrl;
+        return resultUrl;
+    }
+
+    function copyApUrl() {
+        const text = handleApConvert();
+        if (!text) {
+            showToast("請先輸入完整AP代號與網址！");
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("已成功複製 AP 網址！");
+        }).catch(() => {
+            showToast("複製失敗，請手動複製");
+        });
     }
 
     function saveSettings() {
@@ -316,7 +468,7 @@
                 // 23:59:59 維持當天
                 finalDate = expiration.date;
             } else {
-                // 其他奇怪的時分秒，完整呈現
+                // 其他時分秒，完整呈現
                 finalDate = `${expiration.date} ${expiration.time}`;
             }
         } else {
@@ -366,7 +518,7 @@
             }
         }
 
-        if (empty) { alert("還沒輸入折價券喔"); return; }
+        if (empty) { showToast("還沒輸入折價券喔"); return; }
         if (items.length === 0) return;
 
         // 排序時若有帶時分秒，New Date 依然可正常解析排序
@@ -423,7 +575,7 @@
     }
 
     function copy(id) {
-        navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => alert("已複製！"));
+        navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => showToast("已複製本段文字！"));
     }
 
     function copyAll() {
@@ -439,7 +591,7 @@
         
         textArr.push(details);
         
-        navigator.clipboard.writeText(textArr.join('\n\n')).then(() => alert("已複製全文！"));
+        navigator.clipboard.writeText(textArr.join('\n\n')).then(() => showToast("已複製全文！"));
     }
 </script>
 </body>
